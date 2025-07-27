@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Architecture Rules
+
+## Configuration Structure
+- All configuration must be read from `.flows` folder in current working directory
+- Configuration folder structure:
+  ```
+  .flows/
+  ├── flows/
+  │   └── *.json    # Flow definition files
+  └── servers/
+      └── *.json    # MCP server configuration files
+  ```
+
+## Flow System Architecture
+- Each flow must contain steps and conditions
+- Step structure must include:
+  - `prompt`: The prompt text for AI
+  - `tools`: Array of tool names to make available
+  - `mcpServer`: Name of the MCP server to use
+  - `nextStep`: ID of the next step to execute
+- Condition structure must include:
+  - `condition`: JavaScript expression to evaluate
+  - `yes`: Step ID to execute if condition is true
+  - `no`: Step ID to execute if condition is false
+- Flows must support branching logic and conditional execution
+
+## MCP Integration
+- Each step must link to MCP servers by name reference
+- Support multiple MCP servers running simultaneously (external processes)
+- Implement tool discovery mechanism for available MCP server tools
+- MCP servers run outside the CLI tool and communicate via protocol
+- Support all possible MCP tool types (file operations, search, external APIs, etc.)
+
+## Application Architecture
+- Use chat-based interface, not command-based
+- Maintain conversation history and context
+- Implement proper state management for flow execution
+- Handle asynchronous operations gracefully
+- Provide clear error messages and recovery options

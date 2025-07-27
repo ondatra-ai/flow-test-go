@@ -1,0 +1,7 @@
+---
+description: "Prohibits summarizing changes made in communication"
+globs: **/*
+alwaysApply: false
+---
+
+- Don't summarize changes made 

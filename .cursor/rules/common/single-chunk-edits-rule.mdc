@@ -1,0 +1,6 @@
+---
+description: "Requires providing all edits in a single chunk instead of multiple steps"
+globs: ["**/*"]
+---
+
+- Provide all edits in a single chunk instead of multiple-step instructions or explanations for the same file 

@@ -1,0 +1,52 @@
+# Pre-commit hooks configuration
+# See https://pre-commit.com for more information
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.55.2
+    hooks:
+      - id: golangci-lint
+        args: ['--fix']
+
+  - repo: local
+    hooks:
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: go mod tidy
+        language: system
+        types: [go]
+        pass_filenames: false
+
+      - id: go-fmt
+        name: go fmt
+        entry: gofumpt -l -w
+        language: system
+        types: [go]
+        pass_filenames: true
+
+      - id: go-imports
+        name: go imports
+        entry: goimports -local github.com/peterovchinnikov/flow-test-go -w
+        language: system
+        types: [go]
+        pass_filenames: true
+
+      - id: go-test
+        name: go test
+        entry: go test -v -race ./...
+        language: system
+        types: [go]
+        pass_filenames: false

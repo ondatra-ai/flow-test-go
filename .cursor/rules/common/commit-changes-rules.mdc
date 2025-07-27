@@ -1,0 +1,80 @@
+---
+description: Rules for commiting and pushing changes
+globs: 
+alwaysApply: false
+---
+# Commit Changes Guidelines
+
+When making changes to the codebase, follow these guidelines for committing your work:
+
+## Analysis Process
+1. Run `git --no-pager status` to see which files have changed
+2. Run `git --no-pager diff` to see the actual changes in the code
+3. Analyze the changes to understand the purpose and impact
+
+## Commit Process
+1. Review and stage your changes
+2. Prepare a proper commit message (see format below)
+3. Commit the changes
+4. **CRITICAL: Always push to remote repository after committing WITHOUT asking for confirmation**
+5. Remove any temporary files created during the process
+
+## Commit Message Format
+- Title: One sentence summary (max 120 characters)
+- Empty line
+- Body: Bullet list of changes (with NO extra lines between bullet points)
+- No additional text
+
+## Example:
+```
+Add user authentication to login page
+
+- Add password validation function
+- Create JWT token generation
+- Add error handling for invalid credentials
+```
+
+## Git Command Format
+For creating commit messages with proper formatting, use one of these approaches:
+
+### Method 1: Build commit message using separate echo commands
+```
+# Create commit message file line by line
+echo "Your commit title" > `.cursor/tmp/commit-msg.txt`
+echo "" >> `.cursor/tmp/commit-msg.txt`
+echo "- First bullet point" >> `.cursor/tmp/commit-msg.txt`
+echo "- Second bullet point" >> `.cursor/tmp/commit-msg.txt`
+echo "- Third bullet point" >> `.cursor/tmp/commit-msg.txt`
+
+# Commit using the file and clean up, then AUTOMATICALLY push without confirmation
+git commit -F `.cursor/tmp/commit-msg.txt` && rm `.cursor/tmp/commit-msg.txt` && git push
+```
+
+### Method 2: For simple commits, use the -m flag twice
+```
+# Commit and AUTOMATICALLY push without confirmation
+git commit -m "Your commit title" -m "- First bullet point" && git push
+```
+
+## Important
+- Always create temporary files in the `.cursor/tmp/` folder and clean them up after completing the commit process to avoid cluttering the workspace.
+- **Never leave commits unpushed** - changes must be pushed to the remote repository to ensure they are backed up and accessible to other team members.
+- **Never ask for confirmation when pushing** - always push automatically after commit.
+- If you encounter push errors, resolve them immediately before continuing with other tasks.
+
+## Complete Git Workflow Example
+```
+# Check status and diff
+git --no-pager status
+git --no-pager diff
+
+# Stage and commit changes, then AUTOMATICALLY push without confirmation
+git add .
+git commit -m "Your descriptive title" -m "- Detailed change description" && git push
+
+# If push fails, pull latest changes and try again
+if [ $? -ne 0 ]; then
+  git pull --rebase
+  git push
+fi
+```

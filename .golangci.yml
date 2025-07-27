@@ -1,0 +1,196 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  # Timeout for analysis
+  timeout: 5m
+  
+  # Include test files
+  tests: true
+  
+  # Skip vendor, third party, protobuf, etc.
+  skip-dirs:
+    - vendor
+    - third_party
+    - testdata
+    - examples
+    - .git
+    - .github
+
+# Output configuration
+output:
+  # Format: colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|github-actions
+  format: colored-line-number
+  
+  # Print lines of code with issue
+  print-issued-lines: true
+  
+  # Print linter name in the end of issue text
+  print-linter-name: true
+
+# Linter settings
+linters-settings:
+  errcheck:
+    # Report about not checking of errors in type assertions
+    check-type-assertions: true
+    
+  govet:
+    # Report about shadowed variables
+    check-shadowing: true
+    
+  gocyclo:
+    # Minimal code complexity to report
+    min-complexity: 15
+    
+  dupl:
+    # Tokens count to trigger issue
+    threshold: 100
+    
+  goconst:
+    # Minimal length of string constant
+    min-len: 3
+    # Minimal occurrences count to trigger
+    min-occurrences: 3
+    
+  misspell:
+    # Locale to use
+    locale: US
+    
+  lll:
+    # Max line length
+    line-length: 120
+    
+  goimports:
+    # Put imports beginning with prefix after 3rd-party packages
+    local-prefixes: github.com/peterovchinnikov/flow-test-go
+    
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+      
+  funlen:
+    lines: 100
+    statements: 50
+    
+  gofumpt:
+    # Choose whether or not to use the extra rules
+    extra-rules: true
+
+# Enabled/disabled linters
+linters:
+  enable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - funlen
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - revive
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - gofumpt
+    - errorlint
+    - godox
+    - predeclared
+    
+  disable:
+    - gochecknoglobals # We might use some globals for configuration
+    - godot # Too strict about comments
+    - testpackage # We want to test private functions
+    - wsl # Too strict about newlines
+    - nlreturn # Too strict about newlines
+    - exhaustivestruct # Deprecated
+    - golint # Deprecated
+    - interfacer # Deprecated
+    - maligned # Deprecated
+    - scopelint # Deprecated
+
+issues:
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 3
+  
+  # Exclude some linters from running on tests files
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - funlen
+        
+    # Exclude some linters from running on example files
+    - path: examples/
+      linters:
+        - gomnd
+        - goconst
+        - funlen
+        - godox
+        
+    # Exclude known patterns
+    - linters:
+        - lll
+      source: "^//go:generate "
+      
+  # Independently from option `exclude` we use default exclude patterns
+  exclude-use-default: true
+  
+  # Fix found issues (if it's supported by the linter)
+  fix: false
+
+severity:
+  # Default value is empty string.
+  # Set the default severity for issues. If severity rules are defined and the issues
+  # do not match or no severity is provided to the rule this will be the default
+  # severity applied.
+  default-severity: error
+
+  # The default value is false.
+  # If set to true severity-rules regular expressions become case sensitive.
+  case-sensitive: false
+
+  # Default value is empty list.
+  # When a list of severity rules are provided, severity information will be added to lint
+  # issues. Severity rules have the same filtering capability as exclude rules except you
+  # are allowed to specify one matcher per severity rule.
+  rules:
+    - linters:
+        - dupl
+      severity: info

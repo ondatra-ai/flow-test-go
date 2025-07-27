@@ -1,0 +1,163 @@
+# Code Review Start Process
+
+## CRITICAL: Complete File Analysis Requirement
+
+**MANDATORY**: You MUST analyze ALL changed files identified by `git diff --name-status`. No file should be skipped or overlooked. Use @project-structure.mdc to understand the codebase structure during analysis.
+
+### Analysis Approach:
+1. **Holistic Review First**: Review all changes together to understand the overall impact and identify mixed concerns
+2. **File-by-File Deep Dive**: Then analyze each file individually for specific issues
+3. **Security Priority**: Pay special attention to ANY hardcoded credentials, API keys, passwords, or sensitive data
+
+## Review Workflow
+
+### 1. Initial Branch Analysis
+- Use `git diff --name-status main...<branch-name>` to identify ALL changed files
+- **IMPORTANT**: Create a checklist of every single file that needs review
+- Identify if multiple unrelated features are mixed in a single branch
+- Reference @project-structure.mdc to understand where changes fit in the architecture
+
+### 2. Holistic Analysis Phase
+Before diving into individual files:
+- Review the complete set of changes to understand the branch's purpose
+- Identify patterns across multiple files
+- Check for consistency in implementation approach
+- Look for missing pieces (e.g., tests for new features, documentation updates)
+- Verify changes align with project architecture from @project-structure.mdc
+
+### 3. File-by-File Analysis
+For EVERY changed file (no exceptions):
+- Examine the diff using `git diff main...<branch-name> -- <file-path>`
+- For new files, read the entire content
+- For modified files, understand both the original and new state
+- Check against project standards and architecture rules
+- **SECURITY SCAN**: Look for any sensitive data, especially in test files
+
+### 4. Code Quality Evaluation
+
+#### DRY (Don't Repeat Yourself) Violations
+- Identify duplicated code or logic
+- Look for hardcoded values that should be externalized
+- Check for redundant error handling or logging
+- Spot repeated template strings that should be in separate files
+
+#### SOLID Principles Violations
+- **Single Responsibility**: Check if classes/modules have a single, well-defined purpose
+- **Open/Closed**: Ensure code is open for extension but closed for modification
+- **Liskov Substitution**: Verify proper inheritance hierarchies
+- **Interface Segregation**: Look for bloated interfaces
+- **Dependency Inversion**: Check for proper abstraction and dependency injection
+
+#### Additional Considerations
+- Avoid creating unnecessary functions when simple inline code suffices
+- Ensure consistency with project standards (TypeScript, ES modules, etc.)
+- Check for proper error handling and logging practices
+- Verify that configuration is externalized appropriately
+
+#### Security Considerations
+- **Hardcoded Credentials**: Check for passwords, API keys, tokens, or secrets in code
+- **Sensitive Information**: Look for personally identifiable information (PII), email addresses, phone numbers
+- **Test Data Security**: THOROUGHLY check ALL test data files for real credentials or PII
+- **Connection Strings**: Ensure database connections and URLs don't contain credentials
+- **Environment Variables**: Verify sensitive data is read from environment variables, not hardcoded
+- **Logging Practices**: Ensure sensitive data is not logged (passwords, tokens, PII)
+- **Comments**: Check for sensitive information in comments or TODOs
+- **Test Files**: Verify test files don't contain real user data, production credentials, or actual email addresses
+- **Configuration Files**: Ensure example configs use placeholder values, not real credentials
+- **Error Messages**: Check that error messages don't expose internal system details
+- **Input Validation**: Verify proper validation to prevent injection attacks
+- **Cryptographic Keys**: Ensure no private keys, certificates, or secrets are committed
+- **Third-party Dependencies**: Check for known vulnerabilities in dependencies
+
+### 5. Documentation Format
+
+When documenting findings, use the following format in `./tmp/PR_CONVERSATIONS.md`:
+
+```
+### **<relative path to file>:<line>** 
+Id: Local
+Author: Local
+Description: <one sentence up to 40 words describing the issue>
+----
+<Full description of the issue and suggested improvement>
+----
+Status: RELEVANT
+Recommendation: <Whether this issue needs to be processed or can be ignored>
+Decision: 
+```
+
+**Important**: Only add the formatted list of issues above to the PR_CONVERSATIONS.md file. Do not add any additional content, summaries, or explanations beyond the structured format.
+
+## Review Checklist
+
+Before completing the review, ensure you have:
+- [ ] Listed ALL files from `git diff --name-status`
+- [ ] Analyzed the branch holistically for mixed concerns
+- [ ] Reviewed EVERY single file individually
+- [ ] Checked ALL test data files for security issues
+- [ ] Referenced @project-structure.mdc during analysis
+- [ ] Documented all findings in PR_CONVERSATIONS.md
+
+## Common Issues to Look For
+
+### 1. Mixed Concerns in Branches
+- Multiple unrelated features in a single branch
+- Incomplete implementations mixed with other changes
+- Test code mixed with feature code inappropriately
+
+### 2. Code Organization
+- Business logic in entry point files (e.g., `index.ts`)
+- Hardcoded configuration or templates in logic files
+- Missing separation between concerns
+
+### 3. Dependency Injection Issues
+- Incorrect lifecycle management (singleton vs transient)
+- Hardcoded dependencies instead of configurable ones
+- Missing or improper use of DI tokens
+
+### 4. Template and Configuration Management
+- Hardcoded strings that should be in template files
+- Configuration values embedded in code
+- Inconsistent code generation (e.g., CommonJS vs ES modules)
+
+### 5. Error Handling
+- Redundant error logging at multiple levels
+- Missing error context
+- Bare catch blocks without proper handling
+
+### 6. Security Issues
+- Hardcoded passwords, API keys, or tokens in source code
+- **Real email addresses or personal information in test data**
+- Sensitive data in configuration files or test fixtures
+- Credentials in connection strings or URLs
+- PII or sensitive information in logs or error messages
+- Missing input validation that could lead to injection attacks
+- Exposed internal system details in error responses
+- Committed private keys, certificates, or .env files
+- Real production data used in tests or examples
+- **Actual user credentials in test descriptions or documentation**
+
+## Review Best Practices
+
+1. **Start with the Big Picture**: Understand what the branch is trying to accomplish
+2. **Check for Focus**: Ensure the branch has a single, clear purpose
+3. **Verify Completeness**: Check that all started features are properly implemented
+4. **Maintain Standards**: Ensure generated code matches project conventions
+5. **Think Reusability**: Consider if code can be made more generic or configurable
+6. **Document Thoroughly**: Provide clear, actionable feedback with specific examples
+
+## Output Recommendations
+
+When providing recommendations:
+- Be specific about file locations and line numbers
+- Explain why something is a problem (not just that it is)
+- Provide concrete suggestions for improvement
+- Prioritize issues by impact and ease of resolution
+- Group related issues together for clarity
+alwaysApply: false
+---
+
+- Prioritize issues by impact and ease of resolution
+- Group related issues together for clarity
+alwaysApply: false
+---

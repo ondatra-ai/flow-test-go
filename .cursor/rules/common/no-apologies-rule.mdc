@@ -1,0 +1,7 @@
+---
+description: "Prohibits the use of apologies in communication"
+globs: **/*
+alwaysApply: false
+---
+
+- Never use apologies 

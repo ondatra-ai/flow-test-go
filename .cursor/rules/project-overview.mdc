@@ -1,0 +1,21 @@
+---
+globs: *.ts
+alwaysApply: false
+---
+# Ondatra Code Project Overview
+
+## Project Description
+An interactive conversational interface similar to claude-code. The application integrates with AI models through MCP (Model Context Protocol) servers and executes custom-defined flows.
+
+## Core Features
+- **Code generation and editing capabilities** - AI-powered code generation and modification
+- **MCP Server Integration** - Connect to multiple MCP servers for various tool capabilities  
+- **Custom Flow System** - JSON-based flow definitions for complex AI-driven workflows
+- **Chat Interface** - Interactive conversational interface similar to claude-code
+
+## Key Characteristics
+- Configuration-driven from `.flows` folder in current working directory
+- Support for multiple simultaneous MCP server connections
+- Branching flow logic with conditions
+- Tool discovery for available MCP server capabilities
+- Strict TypeScript implementation

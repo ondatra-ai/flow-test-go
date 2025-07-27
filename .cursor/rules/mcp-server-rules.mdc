@@ -1,0 +1,64 @@
+---
+description: 
+globs: **/*
+alwaysApply: false
+---
+# MCP Server Configuration Rules
+
+## MCP Server Configuration Format
+All MCP server configuration files must follow the MCP protocol standards:
+
+```json
+{
+  "name": "unique-server-name",
+  "command": "command-to-start-server",
+  "args": ["arg1", "arg2"],
+  "env": {
+    "ENV_VAR": "value"
+  },
+  "transportType": "stdio" | "http",
+  "transportOptions": {
+    // Transport-specific options
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": false
+  }
+}
+```
+
+## Configuration Requirements
+- Server `name` must be unique across all configurations
+- Server `name` is used as reference in flow steps
+- `command` must be executable from the system PATH or absolute path
+- `transportType` determines communication protocol with server
+- `capabilities` should accurately reflect server features
+
+## Tool Discovery
+- CLI must query each MCP server for available tools on startup
+- Tool lists should be cached during session
+- Implement refresh mechanism for tool discovery
+- Handle servers that don't respond to tool queries gracefully
+- Validate that tools referenced in flows exist on specified servers
+
+## Multiple Server Support
+- All configured servers start when CLI launches
+- Servers run as separate processes outside the CLI
+- Implement health checks for each server
+- Handle server crashes with automatic restart attempts
+- Provide clear error messages when servers are unavailable
+
+## Security Considerations
+- Validate server configurations before starting
+- Sanitize environment variables
+- Implement timeout for server responses
+- Log all server communications for debugging
+- Never expose sensitive configuration in logs
+
+## Best Practices
+- Use descriptive server names that indicate their purpose
+- Document what tools each server provides
+- Keep server configurations minimal and focused
+- Test servers independently before integration
+- Version control server configurations with the project
