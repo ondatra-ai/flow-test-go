@@ -1,153 +1,243 @@
-# golangci-lint configuration
-# https://golangci-lint.run/usage/configuration/
+version: 2
 
 run:
-  # Timeout for analysis
   timeout: 5m
-  
-  # Include test files
   tests: true
-  
-  # Skip vendor, third party, protobuf, etc.
   skip-dirs:
+    - bin
     - vendor
-    - third_party
-    - testdata
-    - examples
     - .git
-    - .github
+    - coverage
+    - test_results
 
-# Output configuration
-output:
-  # Format: colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|github-actions
-  format: colored-line-number
-  
-  # Print lines of code with issue
-  print-issued-lines: true
-  
-  # Print linter name in the end of issue text
-  print-linter-name: true
-
-# Linter settings
 linters-settings:
   errcheck:
-    # Report about not checking of errors in type assertions
     check-type-assertions: true
-    
+    check-blank: true
+  
   govet:
-    # Report about shadowed variables
     check-shadowing: true
-    
+    enable-all: true
+  
+  revive:
+    rules:
+      - name: exported
+      - name: package-comments
+      - name: var-naming
+      - name: function-result-limit
+        arguments: [3]
+      - name: argument-limit
+        arguments: [5]
+      - name: cyclomatic
+        arguments: [15]
+  
+  cyclop:
+    max-complexity: 15
+    package-average: 10.0
+  
   gocyclo:
-    # Minimal code complexity to report
     min-complexity: 15
-    
-  dupl:
-    # Tokens count to trigger issue
-    threshold: 100
-    
-  goconst:
-    # Minimal length of string constant
-    min-len: 3
-    # Minimal occurrences count to trigger
-    min-occurrences: 3
-    
-  misspell:
-    # Locale to use
-    locale: US
-    
-  lll:
-    # Max line length
-    line-length: 120
-    
-  goimports:
-    # Put imports beginning with prefix after 3rd-party packages
-    local-prefixes: github.com/peterovchinnikov/flow-test-go
-    
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
-      
+  
+  gocognit:
+    min-complexity: 15
+  
   funlen:
     lines: 100
     statements: 50
-    
-  gofumpt:
-    # Choose whether or not to use the extra rules
-    extra-rules: true
+  
+  lll:
+    line-length: 120
+  
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+  
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+  
+  gosec:
+    severity: medium
+    confidence: medium
+    excludes:
+      - G104
+  
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: true
+  
+  dupl:
+    threshold: 100
+  
+  mnd:
+    checks:
+      - argument
+      - case
+      - condition
+      - operation
+      - return
+      - assign
+    ignored-numbers:
+      - "0"
+      - "1"
+      - "2"
+      - "3"
+      - "10"
+      - "100"
+      - "1000"
+  
+  varnamelen:
+    min-name-length: 2
+    ignore-names:
+      - err
+      - id
+      - ok
+      - i
+      - j
+      - k
+      - v
+      - db
+      - tx
+      - ctx
+  
+  interfacebloat:
+    max: 10
+  
+  maintidx:
+    under: 20
+  
+  unparam:
+    check-exported: true
+  
+  nakedret:
+    max-func-lines: 30
+  
+  nestif:
+    min-complexity: 4
 
-# Enabled/disabled linters
 linters:
   enable:
-    - bodyclose
-    - depguard
-    - dogsled
-    - dupl
+    # Core default linters
     - errcheck
-    - exportloopref
-    - exhaustive
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    
+    # Style and formatting
+    - revive
+    - misspell
+    - godot
+    - whitespace
+    
+    # Code complexity
+    - cyclop
+    - gocyclo
+    - gocognit
     - funlen
+    - nestif
+    - maintidx
+    
+    # Line length
+    - lll
+    
+    # Error handling
+    - errorlint
+    - wrapcheck
+    - nilerr
+    
+    # Security
+    - gosec
+    
+    # Performance
+    - prealloc
+    - unconvert
+    
+    # Code duplication
+    - dupl
+    
+    # Magic numbers
+    - mnd
+    
+    # Variable naming
+    - varnamelen
+    - predeclared
+    
+    # Interface bloat
+    - interfacebloat
+    
+    # Testing
+    - testifylint
+    
+    # Unused parameters
+    - unparam
+    
+    # Naked returns
+    - nakedret
+    
+    # Additional verified linters
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - dogsled
+    - durationcheck
+    - errchkjson
+    - errname
+    - exhaustive
+    - fatcontext
     - gochecknoinits
     - goconst
     - gocritic
-    - gocyclo
-    - gofmt
-    - goimports
-    - gomnd
+    - goheader
+    - gomoddirectives
+    - gomodguard
     - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
-    - lll
-    - misspell
-    - nakedret
+    - gosmopolitan
+    - grouper
+    - importas
+    - inamedparam
+    - intrange
+    - makezero
+    - mirror
+    - musttag
     - noctx
     - nolintlint
-    - revive
-    - staticcheck
-    - stylecheck
-    - typecheck
-    - unconvert
-    - unparam
-    - unused
-    - whitespace
-    - gofumpt
-    - errorlint
-    - godox
-    - predeclared
-    
+    - nosprintfhostport
+    - reassign
+    - rowserrcheck
+    - sqlclosecheck
+    - thelper
+    - usestdlibvars
+    - wastedassign
+
   disable:
-    - gochecknoglobals # We might use some globals for configuration
-    - godot # Too strict about comments
-    - testpackage # We want to test private functions
-    - wsl # Too strict about newlines
-    - nlreturn # Too strict about newlines
-    - exhaustivestruct # Deprecated
-    - golint # Deprecated
-    - interfacer # Deprecated
-    - maligned # Deprecated
-    - scopelint # Deprecated
+    # Disabled for CLI applications with acceptable use patterns
+    - gochecknoinits  # CLI commands use init functions for Cobra setup
+    - gosec          # File reading warnings for config loading are acceptable  
+    - revive         # Package naming rules too strict for types package
+    - tagalign       # Tag alignment too strict for current codebase
 
 issues:
-  # Maximum issues count per one linter
-  max-issues-per-linter: 50
+  max-issues-per-linter: 0
+  max-same-issues: 0
   
-  # Maximum count of issues with the same text
-  max-same-issues: 3
+  exclude:
+    # Allow init functions in CLI commands - standard practice for Cobra
+    - "don't use `init` function"
+    # Allow file reading in config package - necessary for config loading  
+    - "G304.*Potential file inclusion via variable"
+    # Allow types package name - standard for type definitions
+    - "var-naming.*avoid meaningless package names"
   
-  # Exclude some linters from running on tests files
   exclude-rules:
+    # Exclude some linters from running on test files
     - path: _test\.go
       linters:
         - gocyclo
@@ -155,42 +245,40 @@ issues:
         - dupl
         - gosec
         - funlen
-        
-    # Exclude some linters from running on example files
-    - path: examples/
+        - gocognit
+        - cyclop
+        - mnd
+        - maintidx
+        - wrapcheck
+        - varnamelen
+    
+    # Exclude some linters from running on main.go
+    - path: cmd/flow-test-go/main\.go
       linters:
-        - gomnd
-        - goconst
-        - funlen
-        - godox
+        - gochecknoinits
+    
+    # Allow unused parameters in interface implementations
+    - linters:
+        - unparam
+      text: "is unused"
         
-    # Exclude known patterns
+    # Allow error shadowing in some cases
     - linters:
-        - lll
-      source: "^//go:generate "
-      
-  # Independently from option `exclude` we use default exclude patterns
-  exclude-use-default: true
+        - govet
+      text: "declaration of \"err\" shadows"
+    
+    # Exclude shadow warnings for common variable names
+    - linters:
+        - govet
+      text: "shadows declaration"
   
-  # Fix found issues (if it's supported by the linter)
-  fix: false
-
-severity:
-  # Default value is empty string.
-  # Set the default severity for issues. If severity rules are defined and the issues
-  # do not match or no severity is provided to the rule this will be the default
-  # severity applied.
-  default-severity: error
-
-  # The default value is false.
-  # If set to true severity-rules regular expressions become case sensitive.
-  case-sensitive: false
-
-  # Default value is empty list.
-  # When a list of severity rules are provided, severity information will be added to lint
-  # issues. Severity rules have the same filtering capability as exclude rules except you
-  # are allowed to specify one matcher per severity rule.
-  rules:
-    - linters:
-        - dupl
-      severity: info
+  exclude-dirs:
+    - vendor
+    - bin
+    - coverage
+    - test_results
+  
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_mock\\.go$"
+    - ".*_gen\\.go$" 

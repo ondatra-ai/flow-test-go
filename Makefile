@@ -19,7 +19,7 @@ install-tools: ## Install development tools
 .PHONY: lint
 lint: ## Run golangci-lint
 	@echo "Running golangci-lint..."
-	@golangci-lint run
+	@export PATH=$$PATH:$$(go env GOPATH)/bin && golangci-lint run
 
 .PHONY: lint-fix
 lint-fix: ## Run golangci-lint with --fix
@@ -120,3 +120,50 @@ check-go-version: ## Check Go version
 	@go version
 	@echo ""
 	@echo "Required: Go 1.21+"
+
+# Coverage targets (excluding main.go package)
+.PHONY: coverage coverage-html coverage-func coverage-full coverage-report
+
+# Coverage targets (excluding main.go package)
+coverage:
+	@echo "🧪 Running tests with coverage (excluding main.go)..."
+	go test ./pkg/... ./internal/... ./cmd/flow-test-go/commands/... -coverprofile=coverage.out
+	@echo "📊 Coverage Summary:"
+	go tool cover -func=coverage.out | tail -1
+
+# Generate HTML coverage report (excluding main.go)
+coverage-html: coverage
+	@echo "🌐 Generating HTML coverage report..."
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "✅ Coverage report generated: coverage.html"
+	@echo "💡 Open with: open coverage.html"
+
+# Show function-level coverage details (excluding main.go)
+coverage-func: coverage
+	@echo "📋 Function-level coverage details:"
+	go tool cover -func=coverage.out
+
+# Full coverage including main.go (for comparison)
+coverage-full:
+	@echo "🧪 Running tests with FULL coverage (including main.go)..."
+	go test ./... -coverprofile=coverage_full.out
+	@echo "📊 Full Coverage Summary:"
+	go tool cover -func=coverage_full.out | tail -1
+
+# Comprehensive coverage report
+coverage-report: coverage
+	@echo ""
+	@echo "📊 COVERAGE REPORT (main.go excluded)"
+	@echo "===================================="
+	@echo ""
+	@echo "🎯 Overall Coverage:"
+	@go tool cover -func=coverage.out | tail -1
+	@echo ""
+	@echo "📦 Package Breakdown:"
+	@go test ./pkg/... ./internal/... ./cmd/flow-test-go/commands/... -cover 2>/dev/null | grep "coverage:" || echo "No coverage data"
+	@echo ""
+	@echo "📁 Files Generated:"
+	@echo "• coverage.out - Raw coverage data (main.go excluded)"
+	@echo "• coverage.html - HTML report (run 'make coverage-html')"
+	@echo ""
+	@echo "💡 To include main.go in coverage: make coverage-full"
