@@ -8,8 +8,8 @@ the current git branch. It uses the GitHub CLI (gh) to search
 for open PRs linked to the current branch.
 
 Usage:
-  Direct execution: go run scripts/get-pr-number.go
-  Build and run: go build -o get-pr-number scripts/get-pr-number.go && ./get-pr-number
+  Direct execution: go run scripts/get-pr-number/main.go
+  Build and run: go build -o get-pr-number scripts/get-pr-number/main.go && ./get-pr-number
 
 Requirements:
   - GitHub CLI (gh) must be installed: https://cli.github.com/

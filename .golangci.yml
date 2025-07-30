@@ -5,15 +5,9 @@ run:
   tests: true
 
 linters:
+  default: standard
   enable:
-    # Default linters
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    
-    # Additional linters (verified available in golangci-lint v2.3.0)
+    - arangolint
     - asasalint
     - asciicheck
     - bidichk
@@ -22,25 +16,31 @@ linters:
     - containedctx
     - contextcheck
     - copyloopvar
-    - cyclop
+    # - cyclop
     - decorder
+    # - depguard
     - dogsled
     - dupl
     - dupword
     - durationcheck
     - embeddedstructfieldcheck
     - err113
+    - errcheck
     - errchkjson
     - errname
     - errorlint
     - exhaustive
+    - exhaustruct
     - exptostd
     - fatcontext
     - forbidigo
     - forcetypeassert
     - funcorder
+    - funlen
     - ginkgolinter
     - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
     - gochecksumtype
     - gocognit
     - goconst
@@ -54,13 +54,16 @@ linters:
     - goprintffuncname
     - gosec
     - gosmopolitan
+    - govet
     - grouper
     - iface
     - importas
     - inamedparam
+    - ineffassign
     - interfacebloat
     - intrange
     - ireturn
+    - lll
     - loggercheck
     - maintidx
     - makezero
@@ -73,10 +76,13 @@ linters:
     - nilerr
     - nilnesserr
     - nilnil
+    - nlreturn
     - noctx
+    - noinlineerr
     - nolintlint
     - nonamedreturns
     - nosprintfhostport
+    - paralleltest
     - perfsprint
     - prealloc
     - predeclared
@@ -84,162 +90,48 @@ linters:
     - protogetter
     - reassign
     - recvcheck
+    # - revive
     - rowserrcheck
     - sloglint
     - spancheck
     - sqlclosecheck
+    - staticcheck
     - tagalign
     - tagliatelle
     - testableexamples
     - testifylint
+    - testpackage
     - thelper
     - tparallel
     - unconvert
     - unparam
+    - unused
     - usestdlibvars
     - usetesting
     - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
+    - wsl_v5
     - zerologlint
+  # Disable specific linters.
+  settings:
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2 
 
-linters-settings:
-  cyclop:
-    max-complexity: 15
-  
-  funlen:
-    lines: 100
-    statements: 50
-  
-  gocognit:
-    min-complexity: 20
-  
-  gocyclo:
-    min-complexity: 15
-  
-  nestif:
-    min-complexity: 5
-  
-  varnamelen:
-    min-name-length: 2
-    ignore-names:
-      - err
-      - i
-      - j
-      - k
-      - id
-      - ok
-    ignore-decls:
-      - c echo.Context
-      - t testing.T
-      - f *os.File
-  
-  lll:
-    line-length: 120
-  
-  depguard:
+  exclusions:
+    generated: lax
+    warn-unused: true
     rules:
-      main:
-        list-mode: lax
-        allow:
-          - $gostd
-          - github.com/spf13/cobra
-          - github.com/spf13/viper
-          - github.com/stretchr/testify
-          - github.com/peterovchinnikov/flow-test-go
-        deny:
-          - pkg: "github.com/pkg/errors"
-            desc: "use standard library errors package"
-  
-  exhaustruct:
-    exclude:
-      - "^net/http.Client$"
-      - "^net/http.Request$"
-      - "^net/http.Response$"
-      - "^net/url.URL$"
-      - "^os/exec.Cmd$"
-      - "^testing.T$"
-      - "^testing.B$"
-      
-  gosec:
-    excludes:
-      - G302  # File permissions (often needed for config dirs)
-      - G304  # File inclusion (handled by other means)
-
-issues:
-  exclude-rules:
-    # Exclude all linting from scripts directory (executable Go scripts)
-    - path: scripts/
-      linters:
-        - typecheck
-        - errcheck
-        - gosec
-        - govet
-        - staticcheck
-        - unused
-        - ineffassign
-      
-    # Exclude strict linters from test files
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - funlen
-        - gocognit
-        - exhaustruct
-        - nlreturn
-        - wsl_v5
-        - paralleltest
-        - testpackage
-        - usetesting
-        - noinlineerr
-        - godox
-        - gochecknoglobals
-        - gochecknoinits
-        - revive
-        - lll
-    
-    # Disable overly strict linters globally
-    - linters:
-        - exhaustruct
-        - noinlineerr
-        - wsl_v5
-      text: ".*"
-    
-    # Exclude lll issues for long lines with go:generate
-    - linters:
-        - lll
-      source: "^//go:generate "
-    
-    # Exclude godot issues for TODO/FIXME comments
-    - linters:
-        - godot
-        - godox
-      source: "^// (TODO|FIXME|XXX|HACK)"
-    
-    # Exclude some checks for main and init functions
-    - linters:
-        - revive
-        - gochecknoinits
-      source: "^func (main|init)\\("
-    
-    # Exclude global variable checks for specific patterns
-    - linters:
-        - gochecknoglobals
-      source: "^var .*(Cmd|Manager|Config|Mutex)"
-    
-    # Exclude function order checks for tests
-    - linters:
-        - funcorder
-      path: _test\.go
-    
-    # Exclude depguard for standard library
-    - linters:
-        - depguard
-      source: "^import.*\"(fmt|os|path|time|context|sync|encoding|net|crypto|testing|strings|strconv|bytes|io|log|errors|sort|reflect|runtime)\""
-  
-  max-issues-per-linter: 0
-  max-same-issues: 0
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - funlen
+      - path: scripts/.*
+        linters:
+          - revive

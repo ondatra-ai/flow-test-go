@@ -5,7 +5,7 @@ This workflow processes analyzed pull request comments from `./tmp/PR_CONVERSATI
 
 ## Prerequisites
 - Analysis file exists at: `./tmp/PR_CONVERSATIONS.md`
-- Scripts available: `./scripts/resolve-pr-conversation.go`
+- Scripts available: `./scripts/resolve-pr-conversation/main.go`
 - GitHub CLI configured for issue creation
 
 ## Process Flow
@@ -23,7 +23,7 @@ This workflow processes analyzed pull request comments from `./tmp/PR_CONVERSATI
 
 #### Step 2.2: Check Status Field
 - **If Status = "OUTDATED"**: 
-  - Execute: `npx tsx scripts/resolve-pr-conversation.ts CONVERSATION_ID "Marked as outdated"`
+  - Execute: `go run scripts/resolve-pr-conversation/main.go CONVERSATION_ID "Marked as outdated"`
   - Skip to next conversation
 - **Otherwise**: Continue to Step 2.3
 
@@ -38,7 +38,7 @@ This workflow processes analyzed pull request comments from `./tmp/PR_CONVERSATI
 
 ### 3. Resolution Command Format
 ```bash
-npx tsx scripts/resolve-pr-conversation.ts CONVERSATION_ID "Your comment here"
+go run scripts/resolve-pr-conversation/main.go CONVERSATION_ID "Your comment here"
 ```
 
 ## Visual Process Diagrams
@@ -147,7 +147,7 @@ When Decision = PROCESS or FIX, apply these rules:
 
 ### Resolution Command
 ```bash
-npx tsx scripts/resolve-pr-conversation.ts CONVERSATION_ID "Your comment"
+go run scripts/resolve-pr-conversation/main.go CONVERSATION_ID "Your comment"
 ```
 
 ### Decision Matrix
