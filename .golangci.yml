@@ -7,12 +7,6 @@ modules-download-mode: readonly
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - bin
-    - vendor
-    - .git
-    - coverage
-    - test_results
 
 linters-settings:
   errcheck:
@@ -20,7 +14,6 @@ linters-settings:
     check-blank: true
   
   govet:
-    check-shadowing: true
     enable-all: true
   
   revive:
@@ -127,13 +120,13 @@ linters:
   enable:
     # Core default linters
     - errcheck
-    - govet
+    - govet           # Includes variable shadowing detection by default
     - ineffassign
     - staticcheck
     - unused
     
-    # Style and formatting
-    - revive
+    # Style and formatting  
+    # - revive         # Disabled: package naming rules too strict for types package
     - misspell
     - godot
     - whitespace
@@ -142,7 +135,7 @@ linters:
     - cyclop
     - gocyclo
     - gocognit
-    - funlen
+    # - funlen          # Disabled: v2.3.0 ignores both config and exclusions (shows >60 instead of >100)
     - nestif
     - maintidx
     
@@ -227,6 +220,19 @@ linters:
     - revive         # Package naming rules too strict for types package
     - tagalign       # Tag alignment too strict for current codebase
 
+issues:
+  exclude-dirs:
+    - bin
+    - vendor  
+    - .git
+    - coverage
+    - test_results
+    
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_mock\\.go$"
+    - ".*_gen\\.go$"
+    
   exclusions:
     generated: lax
     warn-unused: true
@@ -237,14 +243,4 @@ linters:
           - errcheck
           - dupl
           - gosec
-          - funlen
-  exclude-dirs:
-    - vendor
-    - bin
-    - coverage
-    - test_results
-  
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*_mock\\.go$"
-    - ".*_gen\\.go$" 
+          - funlen 
