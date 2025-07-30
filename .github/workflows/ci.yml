@@ -1,108 +1,134 @@
-name: CI
+name: Code Quality
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types: [synchronize, opened, reopened]
+  push:
+    branches:
+      - main
 
-env:
-  GO_VERSION: '1.21'
+# Set minimum permissions by default
+permissions:
+  contents: read
 
 jobs:
-  lint:
-    name: Lint
+  unit-tests:
     runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    timeout-minutes: 10
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Set up Go
+
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
-          
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          args: --timeout=5m
-          
-  test:
-    name: Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ['1.21', '1.22']
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-          
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-            
+          go-version: '1.24.5'
+          cache: true
+
       - name: Download dependencies
         run: go mod download
-        
-      - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
-        
-      - name: Upload coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.go == env.GO_VERSION
-        uses: codecov/codecov-action@v3
+
+      - name: Build app
+        run: make build
+
+      - name: Run tests with coverage
+        run: make coverage
+
+      - name: Save coverage report
+        uses: actions/upload-artifact@v4
         with:
-          file: ./coverage.out
-          
-  build:
-    name: Build
-    runs-on: ${{ matrix.os }}
-    needs: [lint, test]
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        arch: [amd64, arm64]
-        exclude:
-          - os: windows-latest
-            arch: arm64
+          name: coverage-report
+          path: coverage.out
+
+  lint:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    timeout-minutes: 10
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Set up Go
+
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
-          
-      - name: Build
-        env:
-          GOOS: ${{ runner.os }}
-          GOARCH: ${{ matrix.arch }}
-        run: |
-          go build -v -o bin/flow-test-go-${{ runner.os }}-${{ matrix.arch }} ./cmd/flow-test-go
-          
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+          go-version: '1.24.5'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Install golangci-lint
+        run: make install-tools
+
+      - name: Run lint
+        run: make lint
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          name: flow-test-go-${{ runner.os }}-${{ matrix.arch }}
-          path: bin/flow-test-go-${{ runner.os }}-${{ matrix.arch }}
-          
+          go-version: '1.24.5'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build app
+        run: make build
+
+      - name: Run e2e tests
+        run: go test -v ./tests/e2e/...
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sonarqube:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    needs: unit-tests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: ./
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v5.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: SonarQube Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   security:
     name: Security Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+          cache: true
         
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
