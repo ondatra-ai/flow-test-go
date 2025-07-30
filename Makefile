@@ -167,3 +167,44 @@ coverage-report: coverage
 	@echo "• coverage.html - HTML report (run 'make coverage-html')"
 	@echo ""
 	@echo "💡 To include main.go in coverage: make coverage-full"
+
+# Script building targets
+.PHONY: build-scripts clean-scripts
+build-scripts: ## Build all Go scripts to bin/ directory
+	@echo "🔨 Building Go scripts..."
+	@mkdir -p bin
+	@go build -o bin/get-pr-number scripts/get-pr-number.go
+	@go build -o bin/list-pr-conversations scripts/list-pr-conversations.go
+	@go build -o bin/resolve-pr-conversation scripts/resolve-pr-conversation.go
+	@echo "✅ Scripts built successfully in bin/ directory"
+
+clean-scripts: ## Clean built script binaries
+	@echo "🧹 Cleaning script binaries..."
+	@rm -f bin/get-pr-number bin/list-pr-conversations bin/resolve-pr-conversation
+	@echo "✅ Script binaries cleaned"
+
+# Script execution targets
+.PHONY: pr-number pr-conversations resolve-conversation
+pr-number: ## Get PR number for current branch
+	@go run scripts/get-pr-number.go
+
+pr-conversations: ## List PR conversations (usage: make pr-conversations PR=123)
+ifndef PR
+	@echo "Usage: make pr-conversations PR=<pr-number>"
+	@echo "Example: make pr-conversations PR=123"
+else
+	@go run scripts/list-pr-conversations.go $(PR)
+endif
+
+resolve-conversation: ## Resolve PR conversation (usage: make resolve-conversation ID=<thread-id> [COMMENT="message"])
+ifndef ID
+	@echo "Usage: make resolve-conversation ID=<thread-id> [COMMENT=\"message\"]"
+	@echo "Example: make resolve-conversation ID=MDExOlB1bGxSZXF1ZXN0UmV2aWV3VGhyZWFkMzg0Nzc2"
+	@echo "Example: make resolve-conversation ID=MDExOlB1bGxSZXF1ZXN0UmV2aWV3VGhyZWFkMzg0Nzc2 COMMENT=\"Fixed the issue\""
+else
+ifdef COMMENT
+	@go run scripts/resolve-pr-conversation.go $(ID) "$(COMMENT)"
+else
+	@go run scripts/resolve-pr-conversation.go $(ID)
+endif
+endif
