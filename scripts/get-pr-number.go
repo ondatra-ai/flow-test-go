@@ -1,5 +1,4 @@
-//go:build ignore
-// +build ignore
+//usr/bin/env go run "$0" "$@"; exit
 
 /*
 Get PR Number Script

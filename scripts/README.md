@@ -10,7 +10,10 @@ Reveals the Pull Request number associated with the current git branch.
 
 **Usage:**
 ```bash
-# Direct execution
+# Direct execution (like a shell script)
+./scripts/get-pr-number.go
+
+# Alternative: go run
 go run scripts/get-pr-number.go
 
 # Using helper script
@@ -37,13 +40,16 @@ Lists all unresolved review conversations for a specific PR.
 **Usage:**
 ```bash
 # Direct execution
+./scripts/list-pr-conversations.go <PR_NUMBER>
+
+# Alternative: go run
 go run scripts/list-pr-conversations.go <PR_NUMBER>
 
 # Using helper script
 ./scripts/run-script.sh list-pr-conversations 123
 
 # Example
-go run scripts/list-pr-conversations.go 42
+./scripts/list-pr-conversations.go 42
 ```
 
 **Output:**
@@ -58,14 +64,17 @@ Resolves a GitHub review thread (conversation) and optionally adds a comment bef
 **Usage:**
 ```bash
 # Direct execution
+./scripts/resolve-pr-conversation.go <THREAD_ID> [COMMENT]
+
+# Alternative: go run
 go run scripts/resolve-pr-conversation.go <THREAD_ID> [COMMENT]
 
 # Using helper script
 ./scripts/run-script.sh resolve-pr-conversation <THREAD_ID> "Fixed the issue"
 
 # Examples
-go run scripts/resolve-pr-conversation.go MDExOlB1bGxSZXF1ZXN0UmV2aWV3VGhyZWFkMzg0Nzc2
-go run scripts/resolve-pr-conversation.go MDExOlB1bGxSZXF1ZXN0UmV2aWV3VGhyZWFkMzg0Nzc2 "Thanks for the feedback, fixed!"
+./scripts/resolve-pr-conversation.go MDExOlB1bGxSZXF1ZXN0UmV2aWV3VGhyZWFkMzg0Nzc2
+./scripts/resolve-pr-conversation.go MDExOlB1bGxSZXF1ZXN0UmV2aWV3VGhyZWFkMzg0Nzc2 "Thanks for the feedback, fixed!"
 ```
 
 **Parameters:**
@@ -87,30 +96,55 @@ chmod +x scripts/run-script.sh
 ./scripts/run-script.sh
 ```
 
+## Executable Go Scripts
+
+All Go scripts in this directory use a special shebang line that allows them to be executed directly like shell scripts:
+
+```go
+//usr/bin/env go run "$0" "$@"; exit
+```
+
+This approach provides several benefits:
+- **Direct execution**: Run Go scripts like `./script.go` without explicit `go run`
+- **Shell-like behavior**: Pass arguments naturally
+- **No compilation needed**: Scripts are interpreted on-the-fly
+- **Familiar usage**: Works like traditional shell scripts
+
+## Makefile Integration
+
+The project Makefile includes convenient targets for script management:
+
+```bash
+# Build all scripts as binaries
+make build-scripts
+
+# Clean built binaries
+make clean-scripts
+
+# Quick execution targets
+make pr-number
+make pr-conversations PR=123
+make resolve-conversation ID=<thread-id> COMMENT="message"
+```
+
 ## Migration from TypeScript
 
-These Go scripts are direct ports of the original TypeScript scripts:
+These Go scripts replace the original TypeScript scripts with improved functionality:
 
-| TypeScript | Go | Status |
-|------------|----| -------|
-| `get-pr-number.ts` | `get-pr-number.go` | ✅ Converted |
-| `list-pr-conversations.ts` | `list-pr-conversations.go` | ✅ Converted |
-| `resolve-pr-conversation.ts` | `resolve-pr-conversation.go` | ✅ Converted |
+| Original TypeScript | Go Replacement | Status |
+|-------------------|----------------|--------|
+| `get-pr-number.ts` | `get-pr-number.go` | ✅ Converted & Executable |
+| `list-pr-conversations.ts` | `list-pr-conversations.go` | ✅ Converted & Executable |
+| `resolve-pr-conversation.ts` | `resolve-pr-conversation.go` | ✅ Converted & Executable |
 
-### Key Differences
+### Key Improvements
 
-1. **Build Tags**: Go scripts use `//go:build ignore` to prevent them from being included in regular builds
-2. **Error Handling**: Go uses explicit error handling instead of try/catch
-3. **JSON Parsing**: Go uses struct tags for JSON marshaling/unmarshaling
-4. **Execution**: Scripts can be run with `go run` or compiled to binaries
-
-### Benefits of Go Version
-
-- **No Dependencies**: No need for Node.js or npm packages
-- **Better Performance**: Compiled Go code runs faster
-- **Type Safety**: Compile-time type checking
-- **Single Binary**: Can be compiled to standalone executables
-- **Consistent Tooling**: Uses the same language as the main project
+1. **Executable Scripts**: Can be run directly as `./script.go`
+2. **No Dependencies**: No need for Node.js or npm packages
+3. **Better Performance**: Compiled Go code runs faster
+4. **Type Safety**: Compile-time type checking
+5. **Single Binary**: Can be compiled to standalone executables
+6. **Consistent Tooling**: Uses the same language as the main project
 
 ## Dependencies
 
@@ -125,6 +159,9 @@ You can build standalone executables for easier distribution:
 
 ```bash
 # Build all scripts
+make build-scripts
+
+# Or build individually
 go build -o bin/get-pr-number scripts/get-pr-number.go
 go build -o bin/list-pr-conversations scripts/list-pr-conversations.go
 go build -o bin/resolve-pr-conversation scripts/resolve-pr-conversation.go
@@ -147,3 +184,16 @@ All scripts provide meaningful error messages for common issues:
 Exit codes:
 - `0`: Success
 - `1`: Error occurred
+
+## Examples
+
+```bash
+# Get current branch PR number
+./scripts/get-pr-number.go
+
+# List conversations for PR #42
+./scripts/list-pr-conversations.go 42
+
+# Resolve a conversation with a comment
+./scripts/resolve-pr-conversation.go MDExOlB1bGxSZXF1ZXN0UmV2aWV3VGhyZWFkMzg0Nzc2 "Fixed the issue!"
+```
