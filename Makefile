@@ -19,12 +19,12 @@ install-tools: ## Install development tools
 .PHONY: lint
 lint: ## Run golangci-lint
 	@echo "Running golangci-lint..."
-	@export PATH=$$PATH:$$(go env GOPATH)/bin && golangci-lint run
+	@export PATH=$$PATH:$$(go env GOPATH)/bin && golangci-lint run ./cmd/... ./internal/... ./pkg/...
 
 .PHONY: lint-fix
 lint-fix: ## Run golangci-lint with --fix
 	@echo "Running golangci-lint with auto-fix..."
-	@golangci-lint run --fix
+	@golangci-lint run --fix ./cmd/... ./internal/... ./pkg/...
 
 .PHONY: lint-verbose
 lint-verbose: ## Run golangci-lint with verbose output
