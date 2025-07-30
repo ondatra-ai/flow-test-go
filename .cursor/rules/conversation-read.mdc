@@ -10,8 +10,8 @@ This workflow analyzes pull request comments against the current codebase to ide
 
 ## Process
 
-1. Get PR Number: `npx tsx scripts/get-pr-number.ts`
-2. Fetch PR Comments: `npx tsx scripts/list-pr-conversations.ts <PR_NUMBER>`
+1. Get PR Number: `./scripts/get-pr-number.go`
+2. Fetch PR Comments: `./scripts/list-pr-conversations.go <PR_NUMBER>`
 3. Analyze Comments
 For each comment retrieved:
 - Review the comment content

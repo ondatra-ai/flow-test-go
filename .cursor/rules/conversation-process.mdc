@@ -5,7 +5,7 @@ This workflow processes analyzed pull request comments from `./tmp/PR_CONVERSATI
 
 ## Prerequisites
 - Analysis file exists at: `./tmp/PR_CONVERSATIONS.md`
-- Scripts available: `scripts/resolve-pr-conversation.ts`
+- Scripts available: `./scripts/resolve-pr-conversation.go`
 - GitHub CLI configured for issue creation
 
 ## Process Flow
