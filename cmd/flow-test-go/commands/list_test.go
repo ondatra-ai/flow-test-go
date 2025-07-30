@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
@@ -32,12 +33,11 @@ func TestListCommand(t *testing.T) {
 	manager, err := config.NewManager()
 	require.NoError(t, err)
 
-	appConfig, err := manager.LoadConfig()
+	_, err = manager.LoadConfig()
 	require.NoError(t, err)
 
 	// Set global variables (normally set by root command)
 	configMgr = manager
-	appConfig = appConfig
 
 	// Test case 1: No flows (empty directory)
 	t.Run("no flows", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestListCommand(t *testing.T) {
 			RunE: func(_ *cobra.Command, _ []string) error {
 				flows, err := configMgr.ListFlows()
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to list flows: %w", err)
 				}
 
 				if len(flows) == 0 {
@@ -103,7 +103,7 @@ func TestListCommand(t *testing.T) {
 			RunE: func(_ *cobra.Command, _ []string) error {
 				flows, err := configMgr.ListFlows()
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to list flows: %w", err)
 				}
 
 				output.WriteString("📋 Found flows:\n")
@@ -133,7 +133,7 @@ func TestListCommand(t *testing.T) {
 			RunE: func(_ *cobra.Command, _ []string) error {
 				flows, err := configMgr.ListFlows()
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to list flows: %w", err)
 				}
 
 				output.WriteString("📋 Found flows:\n\n")
@@ -186,11 +186,10 @@ func TestListCommand_Integration(t *testing.T) {
 	manager, err := config.NewManager()
 	require.NoError(t, err)
 
-	appConfig, err := manager.LoadConfig()
+	_, err = manager.LoadConfig()
 	require.NoError(t, err)
 
 	configMgr = manager
-	appConfig = appConfig
 
 	// Create a test flow
 	testFlow := &types.FlowDefinition{
@@ -311,7 +310,7 @@ func TestListCommand_ErrorHandling(t *testing.T) {
 	})
 }
 
-// Test helper functions
+// Test helper functions.
 func TestShowDetails_Flag(t *testing.T) {
 	t.Parallel()
 
@@ -323,7 +322,7 @@ func TestShowDetails_Flag(t *testing.T) {
 	assert.Contains(t, flag.Usage, "show detailed information")
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkListCommand_NoFlows(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
@@ -342,7 +341,7 @@ func BenchmarkListCommand_NoFlows(b *testing.B) {
 	configMgr = manager
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = listCmd.RunE(listCmd, []string{})
 	}
 }
@@ -365,7 +364,7 @@ func BenchmarkListCommand_WithFlows(b *testing.B) {
 	configMgr = manager
 
 	// Create test flows
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		flow := &types.FlowDefinition{
 			ID:          "bench-flow-" + string(rune(i)),
 			Name:        "Benchmark Flow",
@@ -378,7 +377,7 @@ func BenchmarkListCommand_WithFlows(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = listCmd.RunE(listCmd, []string{})
 	}
 }

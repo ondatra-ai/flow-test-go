@@ -1,5 +1,9 @@
 version: 2
 
+# Global options
+timeout: 5m
+modules-download-mode: readonly
+
 run:
   timeout: 5m
   tests: true
@@ -224,54 +228,17 @@ linters:
     - revive         # Package naming rules too strict for types package
     - tagalign       # Tag alignment too strict for current codebase
 
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  
-  exclude:
-    # Allow init functions in CLI commands - standard practice for Cobra
-    - "don't use `init` function"
-    # Allow file reading in config package - necessary for config loading  
-    - "G304.*Potential file inclusion via variable"
-    # Allow types package name - standard for type definitions
-    - "var-naming.*avoid meaningless package names"
-  
-  exclude-rules:
-    # Exclude some linters from running on test files
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - funlen
-        - gocognit
-        - cyclop
-        - mnd
-        - maintidx
-        - wrapcheck
-        - varnamelen
-    
-    # Exclude some linters from running on main.go
-    - path: cmd/flow-test-go/main\.go
-      linters:
-        - gochecknoinits
-    
-    # Allow unused parameters in interface implementations
-    - linters:
-        - unparam
-      text: "is unused"
-        
-    # Allow error shadowing in some cases
-    - linters:
-        - govet
-      text: "declaration of \"err\" shadows"
-    
-    # Exclude shadow warnings for common variable names
-    - linters:
-        - govet
-      text: "shadows declaration"
-  
+  exclusions:
+    generated: lax
+    warn-unused: true
+    rules:
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - funlen
   exclude-dirs:
     - vendor
     - bin

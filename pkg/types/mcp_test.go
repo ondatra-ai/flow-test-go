@@ -112,15 +112,15 @@ func TestMCPServerConfig_Validate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.config.Validate()
+			err := testCase.config.Validate()
 
-			if tt.wantErr {
+			if testCase.wantErr {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errMsg)
+				assert.Contains(t, err.Error(), testCase.errMsg)
 
 				// Verify it's an ExecutionError
 				var execErr *ExecutionError
@@ -273,14 +273,14 @@ func TestMCPHealthCheck_IsEnabled(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			if tt.healthCheck != nil {
-				assert.Equal(t, tt.want, tt.healthCheck.Enabled)
+			if testCase.healthCheck != nil {
+				assert.Equal(t, testCase.want, testCase.healthCheck.Enabled)
 			} else {
 				// nil health check should be considered disabled
-				assert.False(t, tt.want)
+				assert.False(t, testCase.want)
 			}
 		})
 	}
@@ -367,7 +367,7 @@ func TestMCPToolResult_Validation(t *testing.T) {
 	assert.NotZero(t, result.Timestamp)
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkMCPServerConfig_Validate(b *testing.B) {
 	config := MCPServerConfig{
 		Name:          "bench-server",
@@ -383,7 +383,7 @@ func BenchmarkMCPServerConfig_Validate(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = config.Validate()
 	}
 }

@@ -370,7 +370,7 @@ func TestConfig_ValidateForExecution_NotImplemented(t *testing.T) {
 	assert.NotNil(t, config)
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkManager_LoadConfig(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
@@ -387,7 +387,7 @@ func BenchmarkManager_LoadConfig(b *testing.B) {
 	require.NoError(b, err)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = manager.LoadConfig()
 	}
 }
@@ -419,7 +419,7 @@ func BenchmarkManager_SaveFlow(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = manager.SaveFlow(flow)
 	}
 }

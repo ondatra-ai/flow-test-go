@@ -147,15 +147,15 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.flow.Validate()
+			err := testCase.flow.Validate()
 
-			if tt.wantErr {
+			if testCase.wantErr {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errMsg)
+				assert.Contains(t, err.Error(), testCase.errMsg)
 
 				// Verify it's an ExecutionError
 				var execErr *ExecutionError
@@ -264,11 +264,11 @@ func TestRetryConfig_Validation(t *testing.T) {
 	}
 
 	// Basic validation
-	assert.Greater(t, retry.MaxAttempts, 0)
+	assert.Positive(t, retry.MaxAttempts)
 	assert.Greater(t, retry.Delay, time.Duration(0))
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkFlowDefinition_Validate(b *testing.B) {
 	flow := FlowDefinition{
 		ID:          "bench-flow",
@@ -289,7 +289,7 @@ func BenchmarkFlowDefinition_Validate(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = flow.Validate()
 	}
 }

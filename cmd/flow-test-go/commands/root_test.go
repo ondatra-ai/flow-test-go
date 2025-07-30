@@ -310,7 +310,7 @@ func TestRootCommand_ErrorOutput(t *testing.T) {
 	rootCmd.SetArgs([]string{})
 }
 
-// Test command structure and relationships
+// Test command structure and relationships.
 func TestRootCommand_Structure(t *testing.T) {
 	t.Parallel()
 
@@ -328,7 +328,7 @@ func TestRootCommand_Structure(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkRootCommand_PersistentPreRunE(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
@@ -342,7 +342,7 @@ func BenchmarkRootCommand_PersistentPreRunE(b *testing.B) {
 	}()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = rootCmd.PersistentPreRunE(rootCmd, []string{})
 	}
 }
@@ -362,7 +362,7 @@ func BenchmarkGetConfigManager(b *testing.B) {
 	_ = rootCmd.PersistentPreRunE(rootCmd, []string{})
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = GetConfigManager()
 	}
 }
