@@ -127,9 +127,9 @@ check-go-version: ## Check Go version
 # Coverage targets (excluding main.go package)
 coverage:
 	@echo "🧪 Running tests with coverage (excluding main.go)..."
-	go test ./pkg/... ./internal/... ./cmd/... -coverprofile=coverage.out
-	@echo "📊 Coverage Summary:"`
-	go tool cover -func=coverage.out | tail -1
+	go test ./pkg/... ./internal/... ./cmd/commands/... -coverprofile=coverage.out
+	@echo "📊 Coverage Summary:"
+	@go tool cover -func=coverage.out | tail -1
 
 # Generate HTML coverage report (excluding main.go)
 coverage-html: coverage

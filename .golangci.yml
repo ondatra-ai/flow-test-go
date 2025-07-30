@@ -155,7 +155,7 @@ linters:
     - nilerr
     
     # Security
-    - gosec
+    # - gosec          # Disabled, using separate security scan job
     
     # Performance
     - prealloc
