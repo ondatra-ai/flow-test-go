@@ -13,8 +13,6 @@ import (
 )
 
 func TestNewManager(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -38,8 +36,6 @@ func TestNewManager(t *testing.T) {
 }
 
 func TestManager_LoadConfig(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -98,8 +94,6 @@ func TestManager_LoadConfig_WithEnvironmentVariables(t *testing.T) {
 }
 
 func TestManager_SaveFlow(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -149,8 +143,6 @@ func TestManager_SaveFlow(t *testing.T) {
 }
 
 func TestManager_LoadFlow(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -201,8 +193,6 @@ func TestManager_LoadFlow(t *testing.T) {
 }
 
 func TestManager_LoadFlow_NotFound(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -225,8 +215,6 @@ func TestManager_LoadFlow_NotFound(t *testing.T) {
 }
 
 func TestManager_ListFlows(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -274,8 +262,6 @@ func TestManager_ListFlows(t *testing.T) {
 }
 
 func TestManager_SaveMCPServer(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -317,8 +303,6 @@ func TestManager_SaveMCPServer(t *testing.T) {
 }
 
 func TestManager_LoadMCPServer_NotImplemented(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -339,8 +323,6 @@ func TestManager_LoadMCPServer_NotImplemented(t *testing.T) {
 }
 
 func TestManager_ListMCPServers_NotImplemented(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -361,8 +343,6 @@ func TestManager_ListMCPServers_NotImplemented(t *testing.T) {
 }
 
 func TestConfig_ValidateForExecution_NotImplemented(t *testing.T) {
-	t.Parallel()
-
 	config := &Config{}
 
 	// Note: ValidateForExecution method needs to be implemented

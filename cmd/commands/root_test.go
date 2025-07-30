@@ -11,8 +11,6 @@ import (
 )
 
 func TestRootCommand_BasicProperties(t *testing.T) {
-	t.Parallel()
-
 	// Test basic command properties
 	assert.Equal(t, "flow-test-go", rootCmd.Use)
 	assert.Contains(t, rootCmd.Short, "CLI tool for orchestrating AI agents")
@@ -36,8 +34,6 @@ func TestRootCommand_BasicProperties(t *testing.T) {
 }
 
 func TestRootCommand_Subcommands(t *testing.T) {
-	t.Parallel()
-
 	// Test that only the list command is registered
 	subcommands := rootCmd.Commands()
 	require.Len(t, subcommands, 1)
@@ -45,8 +41,6 @@ func TestRootCommand_Subcommands(t *testing.T) {
 }
 
 func TestRootCommand_PersistentPreRunE(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -58,6 +52,10 @@ func TestRootCommand_PersistentPreRunE(t *testing.T) {
 	defer func() {
 		_ = os.Chdir(originalDir)
 	}()
+
+	// Reset global state before and after test
+	ResetGlobalState()
+	defer ResetGlobalState()
 
 	// Test successful configuration initialization
 	t.Run("successful initialization", func(t *testing.T) {
@@ -86,24 +84,25 @@ func TestRootCommand_PersistentPreRunE(t *testing.T) {
 }
 
 func TestRootCommand_PersistentPreRunE_Errors(t *testing.T) {
-	t.Parallel()
-
 	// Test with unwritable directory
 	t.Run("unwritable directory", func(t *testing.T) {
-		// Create a temporary directory and make it read-only
+		// Create a temporary directory
 		tmpDir := t.TempDir()
-		err := os.Chmod(tmpDir, 0444) // Read-only
-		require.NoError(t, err)
 
 		originalDir, err := os.Getwd()
 		require.NoError(t, err)
 
+		// Change to the directory first (before making it read-only)
 		err = os.Chdir(tmpDir)
 		require.NoError(t, err)
 		defer func() {
+			_ = os.Chmod(tmpDir, 0755) // Restore permissions first
 			_ = os.Chdir(originalDir)
-			_ = os.Chmod(tmpDir, 0755) // Restore permissions for cleanup
 		}()
+
+		// Now make it read-only after we're inside it
+		err = os.Chmod(tmpDir, 0444) // Read-only
+		require.NoError(t, err)
 
 		err = rootCmd.PersistentPreRunE(rootCmd, []string{})
 		require.Error(t, err)
@@ -112,8 +111,6 @@ func TestRootCommand_PersistentPreRunE_Errors(t *testing.T) {
 }
 
 func TestExecute(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -167,25 +164,23 @@ func TestExecute(t *testing.T) {
 	// Test Execute function with list command
 	t.Run("list command", func(t *testing.T) {
 		var stdout bytes.Buffer
-		rootCmd.SetOut(&stdout)
 
-		rootCmd.SetArgs([]string{"list"})
+		// Create a new command instance to avoid state sharing
+		cmd := CreateRootCmd()
+		cmd.SetOut(&stdout)
+		cmd.SetErr(&stdout)
+		cmd.SetArgs([]string{"list"})
 
-		err := rootCmd.Execute()
+		err := cmd.Execute()
 		require.NoError(t, err)
 
 		// Should show no flows message
 		output := stdout.String()
 		assert.Contains(t, output, "No flows found")
-
-		// Reset args
-		rootCmd.SetArgs([]string{})
 	})
 }
 
 func TestGetConfigManager(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -213,8 +208,6 @@ func TestGetConfigManager(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -263,8 +256,11 @@ func TestRootCommand_ConfigurationValues(t *testing.T) {
 	t.Setenv("OPENROUTER_API_KEY", "test-api-key")
 	t.Setenv("GITHUB_TOKEN", "test-github-token")
 
+	// Reset global state and initialize configuration fresh
+	ResetGlobalState()
+
 	// Initialize configuration
-	err = rootCmd.PersistentPreRunE(rootCmd, []string{})
+	err = initializeConfig()
 	require.NoError(t, err)
 
 	// Verify configuration values
@@ -283,8 +279,6 @@ func TestRootCommand_ConfigurationValues(t *testing.T) {
 }
 
 func TestRootCommand_ErrorOutput(t *testing.T) {
-	t.Parallel()
-
 	// Test that errors are properly formatted
 	// This is more of an integration test for the error handling
 
@@ -312,8 +306,6 @@ func TestRootCommand_ErrorOutput(t *testing.T) {
 
 // Test command structure and relationships.
 func TestRootCommand_Structure(t *testing.T) {
-	t.Parallel()
-
 	// Verify that the root command has the expected structure
 	assert.Equal(t, "flow-test-go", rootCmd.Name())
 	assert.True(t, rootCmd.HasSubCommands())

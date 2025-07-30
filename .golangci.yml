@@ -196,7 +196,6 @@ linters:
     - errname
     - exhaustive
     - fatcontext
-    - gochecknoinits
     - goconst
     - gocritic
     - goheader

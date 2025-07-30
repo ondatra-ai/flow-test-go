@@ -127,8 +127,8 @@ check-go-version: ## Check Go version
 # Coverage targets (excluding main.go package)
 coverage:
 	@echo "🧪 Running tests with coverage (excluding main.go)..."
-	go test ./pkg/... ./internal/... ./cmd/flow-test-go/commands/... -coverprofile=coverage.out
-	@echo "📊 Coverage Summary:"
+	go test ./pkg/... ./internal/... ./cmd/... -coverprofile=coverage.out
+	@echo "📊 Coverage Summary:"`
 	go tool cover -func=coverage.out | tail -1
 
 # Generate HTML coverage report (excluding main.go)
@@ -160,7 +160,7 @@ coverage-report: coverage
 	@go tool cover -func=coverage.out | tail -1
 	@echo ""
 	@echo "📦 Package Breakdown:"
-	@go test ./pkg/... ./internal/... ./cmd/flow-test-go/commands/... -cover 2>/dev/null | grep "coverage:" || echo "No coverage data"
+	@go test ./pkg/... ./internal/... ./cmd/commands/... -cover 2>/dev/null | grep "coverage:" || echo "No coverage data"
 	@echo ""
 	@echo "📁 Files Generated:"
 	@echo "• coverage.out - Raw coverage data (main.go excluded)"

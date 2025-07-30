@@ -15,8 +15,6 @@ import (
 )
 
 func TestListCommand(t *testing.T) {
-	t.Parallel()
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	originalDir, err := os.Getwd()
@@ -36,8 +34,16 @@ func TestListCommand(t *testing.T) {
 	_, err = manager.LoadConfig()
 	require.NoError(t, err)
 
+	// Reset global state before test
+	ResetGlobalState()
+
 	// Set global variables (normally set by root command)
+	initMutex.Lock()
 	configMgr = manager
+	initMutex.Unlock()
+
+	// Reset state after test
+	defer ResetGlobalState()
 
 	// Test case 1: No flows (empty directory)
 	t.Run("no flows", func(t *testing.T) {
@@ -168,7 +174,6 @@ func TestListCommand(t *testing.T) {
 
 func TestListCommand_Integration(t *testing.T) {
 	// This test verifies the actual list command behavior
-	t.Parallel()
 
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
@@ -189,7 +194,16 @@ func TestListCommand_Integration(t *testing.T) {
 	_, err = manager.LoadConfig()
 	require.NoError(t, err)
 
+	// Reset global state before test
+	ResetGlobalState()
+
+	// Set global variables (normally set by root command)
+	initMutex.Lock()
 	configMgr = manager
+	initMutex.Unlock()
+
+	// Reset state after test
+	defer ResetGlobalState()
 
 	// Create a test flow
 	testFlow := &types.FlowDefinition{
@@ -218,10 +232,15 @@ func TestListCommand_Integration(t *testing.T) {
 	t.Run("actual command execution", func(t *testing.T) {
 		// Capture stdout
 		var output bytes.Buffer
-		listCmd.SetOut(&output)
+
+		// Create a new command instance to avoid state sharing
+		cmd := CreateRootCmd()
+		cmd.SetOut(&output)
+		cmd.SetErr(&output)
+		cmd.SetArgs([]string{"list"})
 
 		// Execute the command
-		err := listCmd.RunE(listCmd, []string{})
+		err := cmd.Execute()
 		require.NoError(t, err)
 
 		outputStr := output.String()
@@ -231,14 +250,17 @@ func TestListCommand_Integration(t *testing.T) {
 
 	// Test with details flag
 	t.Run("with details flag", func(t *testing.T) {
-		// Reset the showDetails flag
-		showDetails = true
-		defer func() { showDetails = false }()
-
+		// Capture stdout
 		var output bytes.Buffer
-		listCmd.SetOut(&output)
 
-		err := listCmd.RunE(listCmd, []string{})
+		// Create a new command instance to avoid state sharing
+		cmd := CreateRootCmd()
+		cmd.SetOut(&output)
+		cmd.SetErr(&output)
+		cmd.SetArgs([]string{"list", "--details"})
+
+		// Execute the command
+		err := cmd.Execute()
 		require.NoError(t, err)
 
 		outputStr := output.String()
@@ -251,14 +273,19 @@ func TestListCommand_Integration(t *testing.T) {
 }
 
 func TestListCommand_ErrorHandling(t *testing.T) {
-	t.Parallel()
-
 	// Test with invalid config manager
 	t.Run("nil config manager", func(t *testing.T) {
-		// Temporarily set configMgr to nil
+		// Temporarily set configMgr to nil with proper locking
+		initMutex.Lock()
 		originalConfigMgr := configMgr
 		configMgr = nil
-		defer func() { configMgr = originalConfigMgr }()
+		initMutex.Unlock()
+
+		defer func() {
+			initMutex.Lock()
+			configMgr = originalConfigMgr
+			initMutex.Unlock()
+		}()
 
 		// This should panic or error gracefully
 		assert.Panics(t, func() {
@@ -283,7 +310,13 @@ func TestListCommand_ErrorHandling(t *testing.T) {
 		manager, err := config.NewManager()
 		require.NoError(t, err)
 
+		// Set global variables with proper locking
+		initMutex.Lock()
 		configMgr = manager
+		initMutex.Unlock()
+
+		// Reset state after test
+		defer ResetGlobalState()
 
 		// Create a corrupted flow file
 		flowsDir := ".flows/flows"
@@ -312,8 +345,6 @@ func TestListCommand_ErrorHandling(t *testing.T) {
 
 // Test helper functions.
 func TestShowDetails_Flag(t *testing.T) {
-	t.Parallel()
-
 	// Test that the showDetails flag exists and can be set
 	flag := listCmd.Flags().Lookup("details")
 	require.NotNil(t, flag)
@@ -338,7 +369,13 @@ func BenchmarkListCommand_NoFlows(b *testing.B) {
 	manager, err := config.NewManager()
 	require.NoError(b, err)
 
+	// Set global variables with proper locking
+	initMutex.Lock()
 	configMgr = manager
+	initMutex.Unlock()
+
+	// Reset state after benchmark
+	defer ResetGlobalState()
 
 	b.ResetTimer()
 	for range b.N {
@@ -361,7 +398,13 @@ func BenchmarkListCommand_WithFlows(b *testing.B) {
 	manager, err := config.NewManager()
 	require.NoError(b, err)
 
+	// Set global variables with proper locking
+	initMutex.Lock()
 	configMgr = manager
+	initMutex.Unlock()
+
+	// Reset state after benchmark
+	defer ResetGlobalState()
 
 	// Create test flows
 	for i := range 10 {

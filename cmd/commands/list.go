@@ -19,44 +19,47 @@ var listCmd = &cobra.Command{
 Examples:
   flow-test-go list
   flow-test-go list --details`,
-	RunE: func(_ *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		flows, err := configMgr.ListFlows()
 		if err != nil {
 			return fmt.Errorf("failed to list flows: %w", err)
 		}
 
 		if len(flows) == 0 {
-			fmt.Println("📁 No flows found in .flows/flows directory")
-			fmt.Println("💡 Use 'flow-test-go init' to create example flows")
+			cmd.Println("📁 No flows found in .flows/flows directory")
+			cmd.Println("💡 Use 'flow-test-go init' to create example flows")
 			return nil
 		}
 
-		fmt.Printf("📋 Found %d flow(s):\n\n", len(flows))
+		cmd.Printf("📋 Found %d flow(s):\n\n", len(flows))
+
+		// Get the details flag value from this command instance
+		details, _ := cmd.Flags().GetBool("details")
 
 		for _, flowID := range flows {
-			if showDetails {
+			if details {
 				// Load flow to get details
 				flow, err := configMgr.LoadFlow(flowID)
 				if err != nil {
-					fmt.Printf("❌ %s (failed to load: %v)\n", flowID, err)
+					cmd.Printf("❌ %s (failed to load: %v)\n", flowID, err)
 					continue
 				}
 
-				fmt.Printf("📄 %s\n", flow.ID)
-				fmt.Printf("   Name: %s\n", flow.Name)
-				fmt.Printf("   Description: %s\n", flow.Description)
-				fmt.Printf("   Steps: %d\n", len(flow.Steps))
+				cmd.Printf("📄 %s\n", flow.ID)
+				cmd.Printf("   Name: %s\n", flow.Name)
+				cmd.Printf("   Description: %s\n", flow.Description)
+				cmd.Printf("   Steps: %d\n", len(flow.Steps))
 
 				if len(flow.Variables) > 0 {
 					var vars []string
 					for k := range flow.Variables {
 						vars = append(vars, k)
 					}
-					fmt.Printf("   Variables: %s\n", strings.Join(vars, ", "))
+					cmd.Printf("   Variables: %s\n", strings.Join(vars, ", "))
 				}
-				fmt.Println()
+				cmd.Println()
 			} else {
-				fmt.Printf("📄 %s\n", flowID)
+				cmd.Printf("📄 %s\n", flowID)
 			}
 		}
 

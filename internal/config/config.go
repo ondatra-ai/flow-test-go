@@ -70,18 +70,16 @@ func NewManager() (*Manager, error) {
 	// Default to .flows in current directory
 	configDir := ".flows"
 
-	// Check if config directory exists
-	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		const dirPerms = 0750
-		if err := os.MkdirAll(configDir, dirPerms); err != nil {
-			return nil, fmt.Errorf("failed to create config directory: %w", err)
-		}
-		if err := os.MkdirAll(filepath.Join(configDir, "flows"), dirPerms); err != nil {
-			return nil, fmt.Errorf("failed to create flows directory: %w", err)
-		}
-		if err := os.MkdirAll(filepath.Join(configDir, "servers"), dirPerms); err != nil {
-			return nil, fmt.Errorf("failed to create servers directory: %w", err)
-		}
+	// Create config directories (MkdirAll is idempotent and handles concurrent creation)
+	const dirPerms = 0750
+	if err := os.MkdirAll(configDir, dirPerms); err != nil {
+		return nil, fmt.Errorf("failed to create config directory: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Join(configDir, "flows"), dirPerms); err != nil {
+		return nil, fmt.Errorf("failed to create flows directory: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Join(configDir, "servers"), dirPerms); err != nil {
+		return nil, fmt.Errorf("failed to create servers directory: %w", err)
 	}
 
 	return &Manager{
