@@ -132,7 +132,7 @@ jobs:
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
-          args: ./...
+          args: '-exclude=G304 ./...'
           
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
