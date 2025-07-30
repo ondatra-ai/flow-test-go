@@ -28,6 +28,7 @@ Examples:
 		if len(flows) == 0 {
 			cmd.Println("📁 No flows found in .flows/flows directory")
 			cmd.Println("💡 Use 'flow-test-go init' to create example flows")
+
 			return nil
 		}
 
@@ -42,6 +43,7 @@ Examples:
 				flow, err := configMgr.LoadFlow(flowID)
 				if err != nil {
 					cmd.Printf("❌ %s (failed to load: %v)\n", flowID, err)
+
 					continue
 				}
 

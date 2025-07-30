@@ -12,6 +12,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	// ErrOpenRouterAPIKeyRequired is returned when OpenRouter API key is missing.
+	ErrOpenRouterAPIKeyRequired = errors.New("OpenRouter API key is required for execution " +
+		"(set OPENROUTER_API_KEY env var or llm.apiKey in config)")
+)
+
 // Config represents the application configuration.
 type Config struct {
 	// Application settings
@@ -72,13 +78,16 @@ func NewManager() (*Manager, error) {
 
 	// Create config directories (MkdirAll is idempotent and handles concurrent creation)
 	const dirPerms = 0750
-	if err := os.MkdirAll(configDir, dirPerms); err != nil {
+	err := os.MkdirAll(configDir, dirPerms)
+	if err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Join(configDir, "flows"), dirPerms); err != nil {
+	err = os.MkdirAll(filepath.Join(configDir, "flows"), dirPerms)
+	if err != nil {
 		return nil, fmt.Errorf("failed to create flows directory: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Join(configDir, "servers"), dirPerms); err != nil {
+	err = os.MkdirAll(filepath.Join(configDir, "servers"), dirPerms)
+	if err != nil {
 		return nil, fmt.Errorf("failed to create servers directory: %w", err)
 	}
 
@@ -106,7 +115,9 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 	viper.SetEnvPrefix("FLOW_TEST_GO")
 
 	// Read config file
-	if err := viper.ReadInConfig(); err != nil {
+	var err error
+	err = viper.ReadInConfig()
+	if err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if !errors.As(err, &configFileNotFoundError) {
 			return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -116,7 +127,8 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 
 	// Unmarshal configuration
 	config := &Config{}
-	if err := viper.Unmarshal(config); err != nil {
+	err = viper.Unmarshal(config)
+	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
@@ -133,7 +145,8 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 	}
 
 	// Validate required settings
-	if err := cm.validateConfig(config); err != nil {
+	err = cm.validateConfig(config)
+	if err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
@@ -145,17 +158,19 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 func (cm *Manager) LoadFlow(flowID string) (*types.FlowDefinition, error) {
 	flowPath := filepath.Join(cm.flowsDir, flowID+".json")
 
-	data, err := os.ReadFile(flowPath)
+	data, err := os.ReadFile(flowPath) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("failed to read flow file %s: %w", flowPath, err)
 	}
 
 	var flow types.FlowDefinition
-	if err := json.Unmarshal(data, &flow); err != nil {
+	err = json.Unmarshal(data, &flow)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse flow definition: %w", err)
 	}
 
-	if err := flow.Validate(); err != nil {
+	err = flow.Validate()
+	if err != nil {
 		return nil, fmt.Errorf("flow validation failed: %w", err)
 	}
 
@@ -195,7 +210,7 @@ func (cm *Manager) LoadMCPServers() (map[string]*types.MCPServerConfig, error) {
 		}
 
 		serverPath := filepath.Join(cm.serversDir, file.Name())
-		data, err := os.ReadFile(serverPath)
+		data, err := os.ReadFile(serverPath) // #nosec G304
 		if err != nil {
 			return nil, fmt.Errorf("failed to read server config %s: %w", serverPath, err)
 		}
@@ -260,6 +275,16 @@ func (cm *Manager) GetConfig() *Config {
 	return cm.config
 }
 
+// ValidateForExecution validates configuration for flow execution.
+func (cm *Manager) ValidateForExecution(config *Config) error {
+	// Validate LLM configuration for execution
+	if config.LLM.Provider == "openrouter" && config.LLM.APIKey == "" {
+		return ErrOpenRouterAPIKeyRequired
+	}
+
+	return nil
+}
+
 // setDefaults sets default configuration values.
 func (cm *Manager) setDefaults() {
 	// App defaults
@@ -302,16 +327,5 @@ func (cm *Manager) setDefaults() {
 func (cm *Manager) validateConfig(_ *Config) error {
 	// Basic validation - currently all configs are accepted
 	// Specific validation happens in ValidateForExecution
-	return nil
-}
-
-// ValidateForExecution validates configuration for flow execution.
-func (cm *Manager) ValidateForExecution(config *Config) error {
-	// Validate LLM configuration for execution
-	if config.LLM.Provider == "openrouter" && config.LLM.APIKey == "" {
-		return fmt.Errorf("OpenRouter API key is required for execution " +
-			"(set OPENROUTER_API_KEY env var or llm.apiKey in config)")
-	}
-
 	return nil
 }

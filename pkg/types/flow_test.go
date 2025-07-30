@@ -1,4 +1,4 @@
-package types
+package types_test
 
 import (
 	"testing"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/peterovchinnikov/flow-test-go/pkg/types"
 )
 
 func TestFlowDefinition_Validate(t *testing.T) {
@@ -13,26 +15,26 @@ func TestFlowDefinition_Validate(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		flow    FlowDefinition
+		flow    types.FlowDefinition
 		wantErr bool
 		errMsg  string
 	}{
 		{
 			name: "valid flow",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
-				Steps: map[string]Step{
+				Steps: map[string]types.Step{
 					"step1": {
-						Type: StepTypePrompt,
-						Prompt: &PromptConfig{
+						Type: types.StepTypePrompt,
+						Prompt: &types.PromptConfig{
 							Template: "Hello {{.name}}",
 						},
 						Next: "step2",
 					},
 					"step2": {
-						Type: StepTypeEnd,
+						Type: types.StepTypeEnd,
 					},
 				},
 			},
@@ -40,11 +42,11 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		},
 		{
 			name: "missing flow ID",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				Name:        "Test Flow",
 				Description: "A test flow",
-				Steps: map[string]Step{
-					"step1": {Type: StepTypePrompt},
+				Steps: map[string]types.Step{
+					"step1": {Type: types.StepTypePrompt},
 				},
 			},
 			wantErr: true,
@@ -52,11 +54,11 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		},
 		{
 			name: "missing flow name",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				ID:          "test-flow",
 				Description: "A test flow",
-				Steps: map[string]Step{
-					"step1": {Type: StepTypePrompt},
+				Steps: map[string]types.Step{
+					"step1": {Type: types.StepTypePrompt},
 				},
 			},
 			wantErr: true,
@@ -64,24 +66,24 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		},
 		{
 			name: "no steps",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
-				Steps:       map[string]Step{},
+				Steps:       map[string]types.Step{},
 			},
 			wantErr: true,
 			errMsg:  "flow must have at least one step",
 		},
 		{
 			name: "prompt step without prompt config",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
-				Steps: map[string]Step{
+				Steps: map[string]types.Step{
 					"step1": {
-						Type: StepTypePrompt,
+						Type: types.StepTypePrompt,
 						// Missing Prompt config
 					},
 				},
@@ -91,13 +93,13 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		},
 		{
 			name: "condition step without conditions",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
-				Steps: map[string]Step{
+				Steps: map[string]types.Step{
 					"step1": {
-						Type: StepTypeCondition,
+						Type: types.StepTypeCondition,
 						// Missing Conditions
 					},
 				},
@@ -107,14 +109,14 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		},
 		{
 			name: "invalid next step reference",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
-				Steps: map[string]Step{
+				Steps: map[string]types.Step{
 					"step1": {
-						Type: StepTypePrompt,
-						Prompt: &PromptConfig{
+						Type: types.StepTypePrompt,
+						Prompt: &types.PromptConfig{
 							Template: "Hello",
 						},
 						Next: "nonexistent", // Invalid reference
@@ -126,14 +128,14 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		},
 		{
 			name: "invalid condition next reference",
-			flow: FlowDefinition{
+			flow: types.FlowDefinition{
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
-				Steps: map[string]Step{
+				Steps: map[string]types.Step{
 					"step1": {
-						Type: StepTypeCondition,
-						Conditions: []ConditionConfig{
+						Type: types.StepTypeCondition,
+						Conditions: []types.ConditionConfig{
 							{
 								Expression: "true",
 								Next:       "nonexistent", // Invalid reference
@@ -157,8 +159,8 @@ func TestFlowDefinition_Validate(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.errMsg)
 
-				// Verify it's an ExecutionError
-				var execErr *ExecutionError
+				// Verify it's an types.ExecutionError
+				var execErr *types.ExecutionError
 				require.ErrorAs(t, err, &execErr)
 				assert.NotEmpty(t, execErr.Code)
 				assert.NotZero(t, execErr.Timestamp)
@@ -172,7 +174,7 @@ func TestFlowDefinition_Validate(t *testing.T) {
 func TestExecutionError_Error(t *testing.T) {
 	t.Parallel()
 
-	err := &ExecutionError{
+	err := &types.ExecutionError{
 		Code:      "TEST_ERROR",
 		Message:   "test error message",
 		Details:   map[string]any{"key": "value"},
@@ -188,14 +190,14 @@ func TestStepStatus_String(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		status StepStatus
+		status types.StepStatus
 		want   string
 	}{
-		{"pending", StepStatusPending, "pending"},
-		{"running", StepStatusRunning, "running"},
-		{"completed", StepStatusCompleted, "completed"},
-		{"failed", StepStatusFailed, "failed"},
-		{"skipped", StepStatusSkipped, "skipped"},
+		{"pending", types.StepStatusPending, "pending"},
+		{"running", types.StepStatusRunning, "running"},
+		{"completed", types.StepStatusCompleted, "completed"},
+		{"failed", types.StepStatusFailed, "failed"},
+		{"skipped", types.StepStatusSkipped, "skipped"},
 	}
 
 	for _, tt := range tests {
@@ -211,14 +213,14 @@ func TestExecutionStatus_String(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		status ExecutionStatus
+		status types.ExecutionStatus
 		want   string
 	}{
-		{"pending", StatusPending, "pending"},
-		{"running", StatusRunning, "running"},
-		{"completed", StatusCompleted, "completed"},
-		{"failed", StatusFailed, "failed"},
-		{"canceled", StatusCanceled, "canceled"},
+		{"pending", types.StatusPending, "pending"},
+		{"running", types.StatusRunning, "running"},
+		{"completed", types.StatusCompleted, "completed"},
+		{"failed", types.StatusFailed, "failed"},
+		{"canceled", types.StatusCanceled, "canceled"},
 	}
 
 	for _, tt := range tests {
@@ -232,7 +234,7 @@ func TestExecutionStatus_String(t *testing.T) {
 func TestPromptConfig_Validation(t *testing.T) {
 	t.Parallel()
 
-	prompt := &PromptConfig{
+	prompt := &types.PromptConfig{
 		Template: "Hello {{.name}}",
 		System:   "You are a helpful assistant",
 		Context:  map[string]any{"key": "value"},
@@ -245,7 +247,7 @@ func TestPromptConfig_Validation(t *testing.T) {
 func TestConditionConfig_Validation(t *testing.T) {
 	t.Parallel()
 
-	condition := ConditionConfig{
+	condition := types.ConditionConfig{
 		Expression: "result.success == true",
 		Next:       "success_step",
 	}
@@ -258,7 +260,7 @@ func TestConditionConfig_Validation(t *testing.T) {
 func TestRetryConfig_Validation(t *testing.T) {
 	t.Parallel()
 
-	retry := &RetryConfig{
+	retry := &types.RetryConfig{
 		MaxAttempts: 3,
 		Delay:       time.Second * 5,
 	}
@@ -270,20 +272,20 @@ func TestRetryConfig_Validation(t *testing.T) {
 
 // Benchmark tests.
 func BenchmarkFlowDefinition_Validate(b *testing.B) {
-	flow := FlowDefinition{
+	flow := types.FlowDefinition{
 		ID:          "bench-flow",
 		Name:        "Benchmark Flow",
 		Description: "A benchmark flow",
-		Steps: map[string]Step{
+		Steps: map[string]types.Step{
 			"step1": {
-				Type: StepTypePrompt,
-				Prompt: &PromptConfig{
+				Type: types.StepTypePrompt,
+				Prompt: &types.PromptConfig{
 					Template: "Hello {{.name}}",
 				},
 				Next: "step2",
 			},
 			"step2": {
-				Type: StepTypeEnd,
+				Type: types.StepTypeEnd,
 			},
 		},
 	}

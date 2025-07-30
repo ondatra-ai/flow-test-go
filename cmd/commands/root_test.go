@@ -43,15 +43,8 @@ func TestRootCommand_Subcommands(t *testing.T) {
 func TestRootCommand_PersistentPreRunE(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
 	// Reset global state before and after test
 	ResetGlobalState()
@@ -89,19 +82,14 @@ func TestRootCommand_PersistentPreRunE_Errors(t *testing.T) {
 		// Create a temporary directory
 		tmpDir := t.TempDir()
 
-		originalDir, err := os.Getwd()
-		require.NoError(t, err)
-
 		// Change to the directory first (before making it read-only)
-		err = os.Chdir(tmpDir)
-		require.NoError(t, err)
+		t.Chdir(tmpDir)
 		defer func() {
-			_ = os.Chmod(tmpDir, 0755) // Restore permissions first
-			_ = os.Chdir(originalDir)
+			_ = os.Chmod(tmpDir, 0755) // #nosec G302 -- Restore permissions first
 		}()
 
 		// Now make it read-only after we're inside it
-		err = os.Chmod(tmpDir, 0444) // Read-only
+		err := os.Chmod(tmpDir, 0444) // #nosec G302 -- Read-only for test
 		require.NoError(t, err)
 
 		err = rootCmd.PersistentPreRunE(rootCmd, []string{})
@@ -113,14 +101,7 @@ func TestRootCommand_PersistentPreRunE_Errors(t *testing.T) {
 func TestExecute(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
 	// Test Execute function with help flag
 	t.Run("help flag", func(t *testing.T) {
@@ -183,14 +164,7 @@ func TestExecute(t *testing.T) {
 func TestGetConfigManager(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
 	// Initially should be nil
 	if configMgr == nil {
@@ -198,7 +172,7 @@ func TestGetConfigManager(t *testing.T) {
 	}
 
 	// Initialize via PersistentPreRunE
-	err = rootCmd.PersistentPreRunE(rootCmd, []string{})
+	err := rootCmd.PersistentPreRunE(rootCmd, []string{})
 	require.NoError(t, err)
 
 	// Should now return the manager
@@ -210,14 +184,7 @@ func TestGetConfigManager(t *testing.T) {
 func TestGetConfig(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
 	// Initially should be nil
 	if appConfig == nil {
@@ -225,7 +192,7 @@ func TestGetConfig(t *testing.T) {
 	}
 
 	// Initialize via PersistentPreRunE
-	err = rootCmd.PersistentPreRunE(rootCmd, []string{})
+	err := rootCmd.PersistentPreRunE(rootCmd, []string{})
 	require.NoError(t, err)
 
 	// Should now return the config
@@ -243,14 +210,7 @@ func TestRootCommand_ConfigurationValues(t *testing.T) {
 
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
 	// Set some environment variables
 	t.Setenv("OPENROUTER_API_KEY", "test-api-key")
@@ -260,7 +220,7 @@ func TestRootCommand_ConfigurationValues(t *testing.T) {
 	ResetGlobalState()
 
 	// Initialize configuration
-	err = initializeConfig()
+	err := initializeConfig()
 	require.NoError(t, err)
 
 	// Verify configuration values
@@ -324,14 +284,7 @@ func TestRootCommand_Structure(t *testing.T) {
 func BenchmarkRootCommand_PersistentPreRunE(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(b, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(b, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	b.Chdir(tmpDir)
 
 	b.ResetTimer()
 	for range b.N {
@@ -342,14 +295,7 @@ func BenchmarkRootCommand_PersistentPreRunE(b *testing.B) {
 func BenchmarkGetConfigManager(b *testing.B) {
 	// Initialize once
 	tmpDir := b.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(b, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(b, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	b.Chdir(tmpDir)
 
 	_ = rootCmd.PersistentPreRunE(rootCmd, []string{})
 

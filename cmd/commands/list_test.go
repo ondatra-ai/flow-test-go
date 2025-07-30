@@ -17,15 +17,8 @@ import (
 func TestListCommand(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
 	// Create test manager and config
 	manager, err := config.NewManager()
@@ -177,15 +170,8 @@ func TestListCommand_Integration(t *testing.T) {
 
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
 	// Initialize manager and set global variables
 	manager, err := config.NewManager()
@@ -297,14 +283,7 @@ func TestListCommand_ErrorHandling(t *testing.T) {
 	t.Run("corrupted flow file", func(t *testing.T) {
 		// Create a temporary directory for testing
 		tmpDir := t.TempDir()
-		originalDir, err := os.Getwd()
-		require.NoError(t, err)
-
-		err = os.Chdir(tmpDir)
-		require.NoError(t, err)
-		defer func() {
-			_ = os.Chdir(originalDir)
-		}()
+		t.Chdir(tmpDir)
 
 		// Initialize manager
 		manager, err := config.NewManager()
@@ -357,14 +336,7 @@ func TestShowDetails_Flag(t *testing.T) {
 func BenchmarkListCommand_NoFlows(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(b, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(b, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	b.Chdir(tmpDir)
 
 	manager, err := config.NewManager()
 	require.NoError(b, err)
@@ -386,14 +358,7 @@ func BenchmarkListCommand_NoFlows(b *testing.B) {
 func BenchmarkListCommand_WithFlows(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(b, err)
-
-	err = os.Chdir(tmpDir)
-	require.NoError(b, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	b.Chdir(tmpDir)
 
 	manager, err := config.NewManager()
 	require.NoError(b, err)

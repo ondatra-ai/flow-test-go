@@ -6,8 +6,229 @@ run:
 
 linters:
   enable:
+    # Default linters
     - errcheck
     - govet
     - ineffassign
     - staticcheck
     - unused
+    
+    # Additional linters (verified available in golangci-lint v2.3.0)
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - err113
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosmopolitan
+    - grouper
+    - iface
+    - importas
+    - inamedparam
+    - interfacebloat
+    - intrange
+    - ireturn
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - recvcheck
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - tagalign
+    - tagliatelle
+    - testableexamples
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - usetesting
+    - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - zerologlint
+
+linters-settings:
+  cyclop:
+    max-complexity: 15
+  
+  funlen:
+    lines: 100
+    statements: 50
+  
+  gocognit:
+    min-complexity: 20
+  
+  gocyclo:
+    min-complexity: 15
+  
+  nestif:
+    min-complexity: 5
+  
+  varnamelen:
+    min-name-length: 2
+    ignore-names:
+      - err
+      - i
+      - j
+      - k
+      - id
+      - ok
+    ignore-decls:
+      - c echo.Context
+      - t testing.T
+      - f *os.File
+  
+  lll:
+    line-length: 120
+  
+  depguard:
+    rules:
+      main:
+        list-mode: lax
+        allow:
+          - $gostd
+          - github.com/spf13/cobra
+          - github.com/spf13/viper
+          - github.com/stretchr/testify
+          - github.com/peterovchinnikov/flow-test-go
+        deny:
+          - pkg: "github.com/pkg/errors"
+            desc: "use standard library errors package"
+  
+  exhaustruct:
+    exclude:
+      - "^net/http.Client$"
+      - "^net/http.Request$"
+      - "^net/http.Response$"
+      - "^net/url.URL$"
+      - "^os/exec.Cmd$"
+      - "^testing.T$"
+      - "^testing.B$"
+      
+  gosec:
+    excludes:
+      - G302  # File permissions (often needed for config dirs)
+      - G304  # File inclusion (handled by other means)
+
+issues:
+  exclude-rules:
+    # Exclude strict linters from test files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - funlen
+        - gocognit
+        - exhaustruct
+        - nlreturn
+        - wsl_v5
+        - paralleltest
+        - testpackage
+        - usetesting
+        - noinlineerr
+        - godox
+        - gochecknoglobals
+        - gochecknoinits
+        - revive
+        - lll
+    
+    # Disable overly strict linters globally
+    - linters:
+        - exhaustruct
+        - noinlineerr
+        - wsl_v5
+      text: ".*"
+    
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+    
+    # Exclude godot issues for TODO/FIXME comments
+    - linters:
+        - godot
+        - godox
+      source: "^// (TODO|FIXME|XXX|HACK)"
+    
+    # Exclude some checks for main and init functions
+    - linters:
+        - revive
+        - gochecknoinits
+      source: "^func (main|init)\\("
+    
+    # Exclude global variable checks for specific patterns
+    - linters:
+        - gochecknoglobals
+      source: "^var .*(Cmd|Manager|Config|Mutex)"
+    
+    # Exclude function order checks for tests
+    - linters:
+        - funcorder
+      path: _test\.go
+    
+    # Exclude depguard for standard library
+    - linters:
+        - depguard
+      source: "^import.*\"(fmt|os|path|time|context|sync|encoding|net|crypto|testing|strings|strconv|bytes|io|log|errors|sort|reflect|runtime)\""
+  
+  max-issues-per-linter: 0
+  max-same-issues: 0

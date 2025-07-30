@@ -1,10 +1,12 @@
-package types
+package types_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/peterovchinnikov/flow-test-go/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,18 +15,18 @@ func TestMCPServerConfig_Validate(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		config  MCPServerConfig
+		config  types.MCPServerConfig
 		wantErr bool
 		errMsg  string
 	}{
 		{
 			name: "valid stdio config",
-			config: MCPServerConfig{
+			config: types.MCPServerConfig{
 				Name:          "test-server",
 				Command:       "python",
 				Args:          []string{"-m", "test_server"},
-				TransportType: TransportStdio,
-				Capabilities: MCPCapabilities{
+				TransportType: types.TransportStdio,
+				Capabilities: types.MCPCapabilities{
 					Tools:     true,
 					Resources: true,
 					Prompts:   false,
@@ -35,16 +37,16 @@ func TestMCPServerConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "valid http config",
-			config: MCPServerConfig{
+			config: types.MCPServerConfig{
 				Name:          "http-server",
 				Command:       "node",
 				Args:          []string{"server.js"},
-				TransportType: TransportHTTP,
+				TransportType: types.TransportHTTP,
 				TransportOptions: map[string]any{
 					"host": "localhost",
 					"port": 8080,
 				},
-				Capabilities: MCPCapabilities{
+				Capabilities: types.MCPCapabilities{
 					Tools:     true,
 					Resources: false,
 					Prompts:   true,
@@ -55,25 +57,25 @@ func TestMCPServerConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "missing name",
-			config: MCPServerConfig{
+			config: types.MCPServerConfig{
 				Command:       "python",
-				TransportType: TransportStdio,
+				TransportType: types.TransportStdio,
 			},
 			wantErr: true,
 			errMsg:  "server name is required",
 		},
 		{
 			name: "missing command",
-			config: MCPServerConfig{
+			config: types.MCPServerConfig{
 				Name:          "test-server",
-				TransportType: TransportStdio,
+				TransportType: types.TransportStdio,
 			},
 			wantErr: true,
 			errMsg:  "server command is required",
 		},
 		{
 			name: "invalid transport type",
-			config: MCPServerConfig{
+			config: types.MCPServerConfig{
 				Name:          "test-server",
 				Command:       "python",
 				TransportType: "invalid",
@@ -83,11 +85,11 @@ func TestMCPServerConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "no capabilities enabled",
-			config: MCPServerConfig{
+			config: types.MCPServerConfig{
 				Name:          "test-server",
 				Command:       "python",
-				TransportType: TransportStdio,
-				Capabilities: MCPCapabilities{
+				TransportType: types.TransportStdio,
+				Capabilities: types.MCPCapabilities{
 					Tools:     false,
 					Resources: false,
 					Prompts:   false,
@@ -98,11 +100,11 @@ func TestMCPServerConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "http without transport options",
-			config: MCPServerConfig{
+			config: types.MCPServerConfig{
 				Name:          "http-server",
 				Command:       "node",
-				TransportType: TransportHTTP,
-				Capabilities: MCPCapabilities{
+				TransportType: types.TransportHTTP,
+				Capabilities: types.MCPCapabilities{
 					Tools: true,
 				},
 				// Missing TransportOptions for HTTP
@@ -122,8 +124,8 @@ func TestMCPServerConfig_Validate(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.errMsg)
 
-				// Verify it's an ExecutionError
-				var execErr *ExecutionError
+				// Verify it's an types.ExecutionError
+				var execErr *types.ExecutionError
 				require.ErrorAs(t, err, &execErr)
 				assert.NotEmpty(t, execErr.Code)
 				assert.NotZero(t, execErr.Timestamp)
@@ -139,11 +141,11 @@ func TestMCPTransportType_String(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		transport MCPTransportType
+		transport types.MCPTransportType
 		want      string
 	}{
-		{"stdio", TransportStdio, "stdio"},
-		{"http", TransportHTTP, "http"},
+		{"stdio", types.TransportStdio, "stdio"},
+		{"http", types.TransportHTTP, "http"},
 	}
 
 	for _, tt := range tests {
@@ -159,13 +161,13 @@ func TestMCPServerState_String(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		status MCPServerState
+		status types.MCPServerState
 		want   string
 	}{
-		{"stopped", MCPStateStopped, "stopped"},
-		{"starting", MCPStateStarting, "starting"},
-		{"running", MCPStateRunning, "running"},
-		{"failed", MCPStateFailed, "failed"},
+		{"stopped", types.MCPStateStopped, "stopped"},
+		{"starting", types.MCPStateStarting, "starting"},
+		{"running", types.MCPStateRunning, "running"},
+		{"failed", types.MCPStateFailed, "failed"},
 	}
 
 	for _, tt := range tests {
@@ -181,12 +183,12 @@ func TestMCPCapabilities_HasAnyCapability(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		capabilities MCPCapabilities
+		capabilities types.MCPCapabilities
 		want         bool
 	}{
 		{
 			name: "tools only",
-			capabilities: MCPCapabilities{
+			capabilities: types.MCPCapabilities{
 				Tools:     true,
 				Resources: false,
 				Prompts:   false,
@@ -195,7 +197,7 @@ func TestMCPCapabilities_HasAnyCapability(t *testing.T) {
 		},
 		{
 			name: "resources only",
-			capabilities: MCPCapabilities{
+			capabilities: types.MCPCapabilities{
 				Tools:     false,
 				Resources: true,
 				Prompts:   false,
@@ -204,7 +206,7 @@ func TestMCPCapabilities_HasAnyCapability(t *testing.T) {
 		},
 		{
 			name: "prompts only",
-			capabilities: MCPCapabilities{
+			capabilities: types.MCPCapabilities{
 				Tools:     false,
 				Resources: false,
 				Prompts:   true,
@@ -213,7 +215,7 @@ func TestMCPCapabilities_HasAnyCapability(t *testing.T) {
 		},
 		{
 			name: "all capabilities",
-			capabilities: MCPCapabilities{
+			capabilities: types.MCPCapabilities{
 				Tools:     true,
 				Resources: true,
 				Prompts:   true,
@@ -222,7 +224,7 @@ func TestMCPCapabilities_HasAnyCapability(t *testing.T) {
 		},
 		{
 			name: "no capabilities",
-			capabilities: MCPCapabilities{
+			capabilities: types.MCPCapabilities{
 				Tools:     false,
 				Resources: false,
 				Prompts:   false,
@@ -245,12 +247,12 @@ func TestMCPHealthCheck_IsEnabled(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		healthCheck *MCPHealthCheck
+		healthCheck *types.MCPHealthCheck
 		want        bool
 	}{
 		{
 			name: "enabled health check",
-			healthCheck: &MCPHealthCheck{
+			healthCheck: &types.MCPHealthCheck{
 				Enabled:  true,
 				Interval: 30 * time.Second,
 				Timeout:  5 * time.Second,
@@ -259,7 +261,7 @@ func TestMCPHealthCheck_IsEnabled(t *testing.T) {
 		},
 		{
 			name: "disabled health check",
-			healthCheck: &MCPHealthCheck{
+			healthCheck: &types.MCPHealthCheck{
 				Enabled:  false,
 				Interval: 30 * time.Second,
 				Timeout:  5 * time.Second,
@@ -289,7 +291,7 @@ func TestMCPHealthCheck_IsEnabled(t *testing.T) {
 func TestMCPTool_Validation(t *testing.T) {
 	t.Parallel()
 
-	tool := MCPTool{
+	tool := types.MCPTool{
 		Name:        "test-tool",
 		Description: "A test tool",
 		Schema: map[string]any{
@@ -313,7 +315,7 @@ func TestMCPTool_Validation(t *testing.T) {
 func TestMCPResource_Validation(t *testing.T) {
 	t.Parallel()
 
-	resource := MCPResource{
+	resource := types.MCPResource{
 		URI:         "file:///path/to/resource",
 		Name:        "test-resource",
 		Description: "A test resource",
@@ -332,7 +334,7 @@ func TestMCPResource_Validation(t *testing.T) {
 func TestMCPToolCall_Validation(t *testing.T) {
 	t.Parallel()
 
-	toolCall := MCPToolCall{
+	toolCall := types.MCPToolCall{
 		ID:         "call-123",
 		ToolName:   "test-tool",
 		ServerName: "test-server",
@@ -351,7 +353,7 @@ func TestMCPToolCall_Validation(t *testing.T) {
 func TestMCPToolResult_Validation(t *testing.T) {
 	t.Parallel()
 
-	result := MCPToolResult{
+	result := types.MCPToolResult{
 		CallID:    "call-123",
 		Success:   true,
 		Result:    "Tool execution result",
@@ -369,12 +371,12 @@ func TestMCPToolResult_Validation(t *testing.T) {
 
 // Benchmark tests.
 func BenchmarkMCPServerConfig_Validate(b *testing.B) {
-	config := MCPServerConfig{
+	config := types.MCPServerConfig{
 		Name:          "bench-server",
 		Command:       "python",
 		Args:          []string{"-m", "test_server"},
-		TransportType: TransportStdio,
-		Capabilities: MCPCapabilities{
+		TransportType: types.TransportStdio,
+		Capabilities: types.MCPCapabilities{
 			Tools:     true,
 			Resources: true,
 			Prompts:   false,

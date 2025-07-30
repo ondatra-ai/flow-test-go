@@ -1,4 +1,4 @@
-package e2e
+package e2e_test
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ func TestPlaceholder(t *testing.T) {
 
 	// This is a placeholder test that does nothing but pass
 	// It establishes the e2e testing structure for future use
-	// TODO: Replace with actual e2e tests
+	// Placeholder for future e2e tests
 	t.Log("E2E test structure is ready for implementation")
 }
 

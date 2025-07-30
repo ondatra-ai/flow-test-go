@@ -1,4 +1,4 @@
-package config
+package config_test
 
 import (
 	"os"
@@ -9,23 +9,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/peterovchinnikov/flow-test-go/internal/config"
+
 	"github.com/peterovchinnikov/flow-test-go/pkg/types"
 )
 
 func TestNewManager(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 	assert.NotNil(t, manager)
 
@@ -38,17 +33,10 @@ func TestNewManager(t *testing.T) {
 func TestManager_LoadConfig(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Test loading default config (should succeed)
@@ -72,17 +60,10 @@ func TestManager_LoadConfig_WithEnvironmentVariables(t *testing.T) {
 
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	config, err := manager.LoadConfig()
@@ -96,17 +77,10 @@ func TestManager_LoadConfig_WithEnvironmentVariables(t *testing.T) {
 func TestManager_SaveFlow(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Create a test flow
@@ -145,17 +119,10 @@ func TestManager_SaveFlow(t *testing.T) {
 func TestManager_LoadFlow(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Create and save a test flow first
@@ -195,17 +162,10 @@ func TestManager_LoadFlow(t *testing.T) {
 func TestManager_LoadFlow_NotFound(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Try to load a non-existent flow
@@ -217,17 +177,10 @@ func TestManager_LoadFlow_NotFound(t *testing.T) {
 func TestManager_ListFlows(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Initially should be empty
@@ -264,17 +217,10 @@ func TestManager_ListFlows(t *testing.T) {
 func TestManager_SaveMCPServer(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Create a test MCP server config
@@ -305,17 +251,10 @@ func TestManager_SaveMCPServer(t *testing.T) {
 func TestManager_LoadMCPServer_NotImplemented(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Note: This test is a placeholder until LoadMCPServer is implemented
@@ -325,17 +264,10 @@ func TestManager_LoadMCPServer_NotImplemented(t *testing.T) {
 func TestManager_ListMCPServers_NotImplemented(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-
 	// Change to temp directory
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	t.Chdir(tmpDir)
 
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(t, err)
 
 	// Note: This test is a placeholder until ListMCPServers is implemented
@@ -343,7 +275,7 @@ func TestManager_ListMCPServers_NotImplemented(t *testing.T) {
 }
 
 func TestConfig_ValidateForExecution_NotImplemented(t *testing.T) {
-	config := &Config{}
+	config := &config.Config{}
 
 	// Note: ValidateForExecution method needs to be implemented
 	// For now, just verify config is not nil
@@ -354,16 +286,9 @@ func TestConfig_ValidateForExecution_NotImplemented(t *testing.T) {
 func BenchmarkManager_LoadConfig(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(b, err)
+	b.Chdir(tmpDir)
 
-	err = os.Chdir(tmpDir)
-	require.NoError(b, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
-
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -375,16 +300,9 @@ func BenchmarkManager_LoadConfig(b *testing.B) {
 func BenchmarkManager_SaveFlow(b *testing.B) {
 	// Create a temporary directory for benchmarking
 	tmpDir := b.TempDir()
-	originalDir, err := os.Getwd()
-	require.NoError(b, err)
+	b.Chdir(tmpDir)
 
-	err = os.Chdir(tmpDir)
-	require.NoError(b, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
-
-	manager, err := NewManager()
+	manager, err := config.NewManager()
 	require.NoError(b, err)
 
 	flow := &types.FlowDefinition{
