@@ -169,6 +169,9 @@ linters-settings:
 
 issues:
   exclude-rules:
+    # Exclude all linting from scripts directory (executable Go scripts)
+    - path: scripts/
+      text: ".*"
     # Exclude strict linters from test files
     - path: _test\.go
       linters:
