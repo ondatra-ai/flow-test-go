@@ -58,11 +58,10 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Install golangci-lint
-        run: make install-tools
-
-      - name: Run lint
-        run: make lint
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
 
   e2e-tests:
     runs-on: ubuntu-latest
