@@ -1,0 +1,62 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Flow Format Rules
+
+## Flow Definition Structure
+All flow files must follow this JSON schema:
+
+```json
+{
+  "id": "unique-flow-id",
+  "name": "Human Readable Flow Name",
+  "description": "Detailed description of what this flow does",
+  "initialStep": "step-id",
+  "steps": {
+    "step-id": {
+      "type": "prompt" | "condition",
+      // Additional fields based on type
+    }
+  }
+}
+```
+
+## Prompt Step Structure
+```json
+{
+  "type": "prompt",
+  "prompt": "The prompt text to send to the AI model",
+  "tools": ["tool1", "tool2", "..."],
+  "mcpServer": "server-name",
+  "nextStep": "next-step-id"
+}
+```
+
+## Condition Step Structure
+```json
+{
+  "type": "condition",
+  "condition": "JavaScript expression that evaluates to boolean",
+  "yes": "step-id-if-true",
+  "no": "step-id-if-false"
+}
+```
+
+## Validation Rules
+- All step IDs must be unique within a flow
+- The `initialStep` must reference a valid step ID
+- All `nextStep`, `yes`, and `no` references must point to valid step IDs
+- Tool names in `tools` array must match available MCP server tools
+- `mcpServer` must reference a configured server name
+- Conditions must be valid JavaScript expressions
+- Circular references in step navigation are allowed but must be intentional
+
+## Best Practices
+- Use descriptive step IDs (e.g., "gather-requirements", "check-file-type")
+- Keep prompts clear and focused on a single task
+- Limit tool arrays to only necessary tools for the step
+- Use meaningful condition expressions with clear intent
+- Document complex flows with detailed descriptions
+- Test all condition branches during flow development

@@ -1,0 +1,21 @@
+{
+  "version": "",
+  "id": "integration-test-flow",
+  "name": "Integration Test Flow",
+  "description": "A flow for integration testing",
+  "variables": {
+    "test": "value"
+  },
+  "steps": {
+    "step1": {
+      "type": "prompt",
+      "prompt": {
+        "template": "Hello {{.name}}"
+      },
+      "next": "step2"
+    },
+    "step2": {
+      "type": "end"
+    }
+  }
+}

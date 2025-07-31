@@ -1,0 +1,18 @@
+{
+  "version": "",
+  "id": "test-flow",
+  "name": "Test Flow",
+  "description": "A test flow for unit testing",
+  "steps": {
+    "step1": {
+      "type": "prompt",
+      "prompt": {
+        "template": "Hello {{.name}}"
+      },
+      "next": "step2"
+    },
+    "step2": {
+      "type": "end"
+    }
+  }
+}

@@ -1,0 +1,467 @@
+# VAN MODE: BRANCH CREATION FOR TASK ISOLATION
+
+🚨 MANDATORY: BRANCH CREATION REQUIRED FOR TASK ISOLATION 🚨
+Every task MUST have its own dedicated branch for proper isolation and tracking
+
+> **TL;DR:** This process creates a dedicated branch for each task during VAN mode initialization, ensuring proper version control isolation and enabling clean task management.
+
+## 🌿 BRANCH CREATION PROCESS FLOW
+
+```mermaid
+graph TD
+    Start["START BRANCH CREATION"] --> GitCheck["Check Git Repository<br>Status"]
+    GitCheck --> GitStatus{"Git Repository<br>Available?"}
+    
+    GitStatus -->|"No"| GitError["⚠️ ERROR: No Git Repository<br>Initialize git repo first"]
+    GitStatus -->|"Yes"| CurrentBranch["Get Current<br>Branch Name"]
+    
+    CurrentBranch --> BranchCheck{"On Main/Master<br>Branch?"}
+    BranchCheck -->|"No"| BranchWarning["⚠️ WARNING: Not on main branch<br>Proceed anyway?"]
+    BranchCheck -->|"Yes"| TaskInfo["Gather Task<br>Information"]
+    
+    BranchWarning --> UserChoice{"User Confirms<br>Proceed?"}
+    UserChoice -->|"No"| SwitchToMain["Switch to Main Branch<br>git checkout main"]
+    UserChoice -->|"Yes"| TaskInfo
+    SwitchToMain --> TaskInfo
+    
+    TaskInfo --> GenerateName["Generate Branch Name<br>task-[date]-[description]"]
+    GenerateName --> ValidateName["Validate Branch Name<br>Format"]
+    ValidateName --> CheckExists{"Branch Already<br>Exists?"}
+    
+    CheckExists -->|"Yes"| HandleExisting["Handle Existing<br>Branch Conflict"]
+    CheckExists -->|"No"| CreateBranch["Create New Branch<br>Platform-Specific Command"]
+    
+    HandleExisting --> ExistingChoice{"Switch to Existing<br>or Create New?"}
+    ExistingChoice -->|"Switch"| SwitchBranch["Switch to Existing<br>Branch"]
+    ExistingChoice -->|"Create New"| ModifyName["Modify Branch Name<br>Add Suffix"]
+    ModifyName --> CreateBranch
+    
+    CreateBranch --> VerifyCreation["Verify Branch<br>Creation Success"]
+    SwitchBranch --> VerifySwitch["Verify Branch<br>Switch Success"]
+    
+    VerifyCreation --> UpdateMemoryBank["Update Memory Bank<br>with Branch Info"]
+    VerifySwitch --> UpdateMemoryBank
+    
+    UpdateMemoryBank --> BranchCP["⛔ BRANCH CREATION<br>CHECKPOINT"]
+    BranchCP --> Complete["Branch Creation<br>Complete ✅"]
+    
+    GitError --> AbortProcess["ABORT VAN MODE<br>Fix Git Setup First"]
+    
+    style Start fill:#4da6ff,stroke:#0066cc,color:white
+    style Complete fill:#10b981,stroke:#059669,color:white
+    style BranchCP fill:#f55,stroke:#d44,color:white
+    style GitError fill:#ff0000,stroke:#990000,color:white
+    style AbortProcess fill:#ff0000,stroke:#990000,color:white
+    style BranchWarning fill:#ffa500,stroke:#cc8400,color:white
+```
+
+## 🖥️ PLATFORM-SPECIFIC IMPLEMENTATIONS
+
+### Windows (PowerShell) Implementation
+
+```powershell
+function Create-TaskBranch {
+    param(
+        [string]$TaskDescription
+    )
+    
+    # Check if git repository exists
+    if (-not (Test-Path ".git")) {
+        Write-Output "❌ ERROR: No git repository found"
+        Write-Output "Initialize git repository first: git init"
+        return $false
+    }
+    
+    # Get current branch
+    try {
+        $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to get current branch"
+        }
+    } catch {
+        Write-Output "❌ ERROR: Failed to get current branch: $($_.Exception.Message)"
+        return $false
+    }
+    
+    # Check if on main branch
+    if ($currentBranch -notin @("main", "master")) {
+        Write-Output "⚠️ WARNING: Currently on branch '$currentBranch', not main/master"
+        $confirm = Read-Host "Continue anyway? (y/N)"
+        if ($confirm -notmatch "^[Yy]") {
+            Write-Output "Switching to main branch..."
+            try {
+                git checkout main 2>$null
+                if ($LASTEXITCODE -ne 0) {
+                    git checkout master 2>$null
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Output "❌ ERROR: Failed to switch to main/master branch"
+                        return $false
+                    }
+                }
+            } catch {
+                Write-Output "❌ ERROR: Failed to switch to main branch"
+                return $false
+            }
+        }
+    }
+    
+    # Generate branch name
+    $taskId = Get-Date -Format "yyyyMMdd"
+    if (-not $TaskDescription) {
+        $TaskDescription = Read-Host "Enter brief task description (kebab-case, e.g., 'fix-login-bug')"
+    }
+    
+    # Validate and sanitize task description
+    $TaskDescription = $TaskDescription -replace "[^a-zA-Z0-9-]", "-" -replace "-+", "-" -replace "^-|-$", ""
+    if (-not $TaskDescription) {
+        Write-Output "❌ ERROR: Invalid task description"
+        return $false
+    }
+    
+    $branchName = "task-$taskId-$TaskDescription"
+    
+    # Check if branch already exists
+    $existingBranch = git branch --list $branchName 2>$null
+    if ($existingBranch) {
+        Write-Output "⚠️ WARNING: Branch '$branchName' already exists"
+        $choice = Read-Host "Choose action: (s)witch to existing, (c)reate new with suffix, (a)bort? (s/c/a)"
+        
+        switch ($choice.ToLower()) {
+            "s" {
+                try {
+                    git checkout $branchName
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Failed to switch to existing branch"
+                    }
+                    Write-Output "✅ Switched to existing branch: $branchName"
+                } catch {
+                    Write-Output "❌ ERROR: Failed to switch to branch '$branchName'"
+                    return $false
+                }
+            }
+            "c" {
+                $suffix = Get-Date -Format "HHmm"
+                $branchName = "$branchName-$suffix"
+                try {
+                    git checkout -b $branchName
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Failed to create new branch"
+                    }
+                    Write-Output "✅ Created new branch: $branchName"
+                } catch {
+                    Write-Output "❌ ERROR: Failed to create branch '$branchName'"
+                    return $false
+                }
+            }
+            default {
+                Write-Output "❌ Branch creation aborted by user"
+                return $false
+            }
+        }
+    } else {
+        # Create new branch
+        try {
+            git checkout -b $branchName
+            if ($LASTEXITCODE -ne 0) {
+                throw "Failed to create new branch"
+            }
+            Write-Output "✅ Created new branch: $branchName"
+        } catch {
+            Write-Output "❌ ERROR: Failed to create branch '$branchName': $($_.Exception.Message)"
+            return $false
+        }
+    }
+    
+    # Update Memory Bank with branch information
+    Update-MemoryBankWithBranch -BranchName $branchName -TaskDescription $TaskDescription
+    
+    return $true
+}
+
+function Update-MemoryBankWithBranch {
+    param(
+        [string]$BranchName,
+        [string]$TaskDescription
+    )
+    
+    # Update tasks.md with branch information
+    if (Test-Path "memory-bank\tasks.md") {
+        $tasksContent = Get-Content "memory-bank\tasks.md" -Raw
+        $branchInfo = "`n## Current Branch: $BranchName`n**Task**: $TaskDescription`n**Created**: $(Get-Date -Format 'yyyy-MM-dd HH:mm')`n"
+        
+        # Insert branch info after the first heading
+        $updatedContent = $tasksContent -replace "(# MEMORY BANK TASKS)", "`$1$branchInfo"
+        Set-Content -Path "memory-bank\tasks.md" -Value $updatedContent
+    }
+    
+    # Update activeContext.md with branch information
+    if (Test-Path "memory-bank\activeContext.md") {
+        $contextContent = Get-Content "memory-bank\activeContext.md" -Raw
+        $branchInfo = "**Current Branch**: $BranchName`n**Task Description**: $TaskDescription`n"
+        
+        # Insert branch info after the task status
+        $updatedContent = $contextContent -replace "(## Current Task Status:.*)`n", "`$1`n$branchInfo`n"
+        Set-Content -Path "memory-bank\activeContext.md" -Value $updatedContent
+    }
+    
+    Write-Output "📝 Updated Memory Bank with branch information"
+}
+```
+
+### Mac/Linux (Bash) Implementation
+
+```bash
+#!/bin/bash
+
+create_task_branch() {
+    local task_description="$1"
+    
+    # Check if git repository exists
+    if [ ! -d ".git" ]; then
+        echo "❌ ERROR: No git repository found"
+        echo "Initialize git repository first: git init"
+        return 1
+    fi
+    
+    # Get current branch
+    local current_branch
+    if ! current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); then
+        echo "❌ ERROR: Failed to get current branch"
+        return 1
+    fi
+    
+    # Check if on main branch
+    if [[ "$current_branch" != "main" && "$current_branch" != "master" ]]; then
+        echo "⚠️ WARNING: Currently on branch '$current_branch', not main/master"
+        read -p "Continue anyway? (y/N): " confirm
+        if [[ ! "$confirm" =~ ^[Yy] ]]; then
+            echo "Switching to main branch..."
+            if ! git checkout main 2>/dev/null && ! git checkout master 2>/dev/null; then
+                echo "❌ ERROR: Failed to switch to main/master branch"
+                return 1
+            fi
+        fi
+    fi
+    
+    # Generate branch name
+    local task_id=$(date +%Y%m%d)
+    if [ -z "$task_description" ]; then
+        read -p "Enter brief task description (kebab-case, e.g., 'fix-login-bug'): " task_description
+    fi
+    
+    # Validate and sanitize task description
+    task_description=$(echo "$task_description" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/-\+/-/g' | sed 's/^-\|-$//g')
+    if [ -z "$task_description" ]; then
+        echo "❌ ERROR: Invalid task description"
+        return 1
+    fi
+    
+    local branch_name="task-${task_id}-${task_description}"
+    
+    # Check if branch already exists
+    if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+        echo "⚠️ WARNING: Branch '$branch_name' already exists"
+        read -p "Choose action: (s)witch to existing, (c)reate new with suffix, (a)bort? (s/c/a): " choice
+        
+        case "$choice" in
+            s|S)
+                if git checkout "$branch_name"; then
+                    echo "✅ Switched to existing branch: $branch_name"
+                else
+                    echo "❌ ERROR: Failed to switch to branch '$branch_name'"
+                    return 1
+                fi
+                ;;
+            c|C)
+                local suffix=$(date +%H%M)
+                branch_name="${branch_name}-${suffix}"
+                if git checkout -b "$branch_name"; then
+                    echo "✅ Created new branch: $branch_name"
+                else
+                    echo "❌ ERROR: Failed to create branch '$branch_name'"
+                    return 1
+                fi
+                ;;
+            *)
+                echo "❌ Branch creation aborted by user"
+                return 1
+                ;;
+        esac
+    else
+        # Create new branch
+        if git checkout -b "$branch_name"; then
+            echo "✅ Created new branch: $branch_name"
+        else
+            echo "❌ ERROR: Failed to create branch '$branch_name'"
+            return 1
+        fi
+    fi
+    
+    # Update Memory Bank with branch information
+    update_memory_bank_with_branch "$branch_name" "$task_description"
+    
+    return 0
+}
+
+update_memory_bank_with_branch() {
+    local branch_name="$1"
+    local task_description="$2"
+    local current_time=$(date '+%Y-%m-%d %H:%M')
+    
+    # Update tasks.md with branch information
+    if [ -f "memory-bank/tasks.md" ]; then
+        local branch_info="
+
+## Current Branch: $branch_name
+**Task**: $task_description
+**Created**: $current_time
+"
+        # Insert branch info after the first heading
+        sed -i.bak "1s/\(# MEMORY BANK TASKS\)/\1$branch_info/" "memory-bank/tasks.md"
+        rm -f "memory-bank/tasks.md.bak"
+    fi
+    
+    # Update activeContext.md with branch information
+    if [ -f "memory-bank/activeContext.md" ]; then
+        local branch_info="**Current Branch**: $branch_name
+**Task Description**: $task_description
+"
+        # Insert branch info after the task status line
+        sed -i.bak "/## Current Task Status:/a\\
+$branch_info" "memory-bank/activeContext.md"
+        rm -f "memory-bank/activeContext.md.bak"
+    fi
+    
+    echo "📝 Updated Memory Bank with branch information"
+}
+```
+
+## 🔍 BRANCH NAMING CONVENTIONS
+
+### Standard Format
+```
+task-[YYYYMMDD]-[description]
+```
+
+### Examples
+- `task-20250117-type-organization`
+- `task-20250117-eslint-rules-enhancement`
+- `task-20250117-fix-login-validation`
+- `task-20250117-add-user-authentication`
+
+### Naming Rules
+1. **Lowercase**: All lowercase letters
+2. **Kebab-case**: Use hyphens to separate words
+3. **Descriptive**: Brief but clear description of the task
+4. **Date-based**: Include creation date for uniqueness
+5. **No special characters**: Only letters, numbers, and hyphens
+
+## ⚠️ ERROR HANDLING SCENARIOS
+
+### Git Repository Not Found
+```
+❌ ERROR: No git repository found
+Initialize git repository first: git init
+⛔ VAN MODE BLOCKED until git repository is available
+```
+
+### Permission Issues
+```
+❌ ERROR: Permission denied when creating branch
+Check git permissions and repository access
+⛔ VAN MODE BLOCKED until permissions are resolved
+```
+
+### Network Issues (Remote Repository)
+```
+⚠️ WARNING: Unable to fetch from remote repository
+Branch created locally but may not sync with remote
+Continue with local branch? (y/N)
+```
+
+### Branch Already Exists
+```
+⚠️ WARNING: Branch 'task-20250117-feature-name' already exists
+Options:
+- (s) Switch to existing branch
+- (c) Create new branch with time suffix
+- (a) Abort and choose different description
+```
+
+## 🔄 INTEGRATION WITH MEMORY BANK
+
+### Updates to tasks.md
+```markdown
+# MEMORY BANK TASKS
+
+## Current Branch: task-20250117-branch-creation
+**Task**: Implement branch creation for VAN mode
+**Created**: 2025-01-17 14:30
+
+## Task Status: 🔄 IN PROGRESS
+```
+
+### Updates to activeContext.md
+```markdown
+# ACTIVE CONTEXT
+
+## Current Task Status: 🔄 IN PROGRESS
+
+**Current Branch**: task-20250117-branch-creation  
+**Task Description**: Implement branch creation for VAN mode  
+**Branch Created**: 2025-01-17 14:30
+```
+
+## 📋 BRANCH CREATION CHECKPOINT
+
+```
+✓ SECTION CHECKPOINT: BRANCH CREATION
+- Git repository available? [YES/NO]
+- Current branch identified? [YES/NO]
+- New branch created successfully? [YES/NO]
+- Memory Bank updated with branch info? [YES/NO]
+
+→ If all YES: Ready for Basic File Verification
+→ If any NO: Fix git setup and branch creation before proceeding
+```
+
+## 🧹 BRANCH CLEANUP GUIDELINES
+
+### End of Task Cleanup
+When task is completed and archived:
+1. **Switch back to main**: `git checkout main`
+2. **Update main branch**: `git pull origin main`
+3. **Delete local branch**: `git branch -d task-YYYYMMDD-description`
+4. **Delete remote branch**: `git push origin --delete task-YYYYMMDD-description`
+
+### Cleanup Commands
+
+**Windows (PowerShell):**
+```powershell
+# After task completion
+git checkout main
+git pull origin main
+git branch -d $branchName
+git push origin --delete $branchName
+```
+
+**Mac/Linux (Bash):**
+```bash
+# After task completion
+git checkout main
+git pull origin main
+git branch -d "$branch_name"
+git push origin --delete "$branch_name"
+```
+
+## 🔄 WORKFLOW INTEGRATION
+
+This branch creation process integrates with:
+1. **VAN Mode Initialization**: Mandatory step after Memory Bank creation
+2. **Commit Rules**: Branch name aligns with commit message conventions
+3. **Task Tracking**: Branch information tracked in Memory Bank
+4. **Quality Gates**: Branch isolation ensures clean testing environment
+description:
+globs:
+alwaysApply: false
+---

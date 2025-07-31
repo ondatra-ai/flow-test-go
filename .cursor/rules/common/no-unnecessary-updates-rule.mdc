@@ -1,0 +1,7 @@
+---
+description: "Prohibits suggesting updates or changes when no modifications are needed"
+globs: **/*
+alwaysApply: false
+---
+
+- Don't suggest updates or changes to files when there are no actual modifications needed 

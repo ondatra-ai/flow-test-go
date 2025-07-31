@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Development Standards
+
+## TypeScript Configuration
+- Use strictest TypeScript settings with all strict flags enabled
+- Required compiler options:
+  ```json
+  {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+  ```
+- No `any` types allowed except when absolutely necessary with clear justification
+- All functions must have explicit return types
+
+## Code Quality Standards
+- ESLint with strictest ruleset configuration
+- Prettier for consistent code formatting
+- Pre-commit hooks must run linting and formatting
+- All code must pass linting before commit
+- Use meaningful variable and function names
+- Add JSDoc comments for all public APIs
+
+## Testing Requirements
+- Use Vitest for both unit and integration tests
+- Minimum test coverage:
+  - 80% overall coverage for core logic
+  - 100% coverage for flow execution engine
+  - Integration tests for all MCP server communication
+- Tests must be co-located with source files (*.test.ts)
+- Mock external dependencies in unit tests
+- Use real MCP servers for integration tests
+
+## Error Handling
+- Never use bare `catch` blocks without proper error handling
+- Always provide meaningful error messages
+- Log errors with appropriate context
+- Implement graceful degradation where possible
+- Use custom error classes for different error types
+
+## Code Organization
+- One class/interface per file
+- Group related functionality in modules
+- Use barrel exports (index.ts) for clean imports
+- Follow consistent file naming: kebab-case for files, PascalCase for classes
+- Keep functions small and focused (single responsibility)
