@@ -16,6 +16,7 @@ This workflow analyzes pull request comments against the current codebase to ide
 For each comment retrieved:
 - Review the comment content
 - Check if the mentioned code/issue still relevant in the current codebase
+  - Check that code mentioned in issue exists and actual
 - Categorize as:
   - **RELEVANT**: The issue or suggestion mentioned still applies (even if code moved to different location)
   - **OUTDATED**: The issue has been addressed or code has changed
@@ -25,6 +26,7 @@ For each comment retrieved:
 - If suggestion hasn't been implemented → RELEVANT  
 - If issue was fixed/refactored → OUTDATED
 - If code was removed entirely → OUTDATED
+- If code related to `.cursor/rules/`, `custom_modes/`, `memory-bank/` -> OUTDATED
 
 ### 4. Generate Report
 Create a detailed report that includes:
