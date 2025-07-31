@@ -14,7 +14,6 @@ import (
 )
 
 func TestNewManager(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -31,7 +30,6 @@ func TestNewManager(t *testing.T) {
 }
 
 func TestManager_LoadConfig(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -76,7 +74,6 @@ func TestManager_LoadConfig_WithEnvironmentVariables(t *testing.T) {
 }
 
 func TestManager_SaveFlow(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -141,7 +138,6 @@ func TestManager_SaveFlow(t *testing.T) {
 }
 
 func TestManager_LoadFlow(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -207,7 +203,6 @@ func TestManager_LoadFlow(t *testing.T) {
 }
 
 func TestManager_LoadFlow_NotFound(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -223,7 +218,6 @@ func TestManager_LoadFlow_NotFound(t *testing.T) {
 }
 
 func TestManager_ListFlows(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -279,7 +273,6 @@ func TestManager_ListFlows(t *testing.T) {
 }
 
 func TestManager_SaveMCPServer(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -321,7 +314,6 @@ func TestManager_SaveMCPServer(t *testing.T) {
 }
 
 func TestManager_LoadMCPServer_NotImplemented(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -335,7 +327,6 @@ func TestManager_LoadMCPServer_NotImplemented(t *testing.T) {
 }
 
 func TestManager_ListMCPServers_NotImplemented(t *testing.T) {
-
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -349,7 +340,6 @@ func TestManager_ListMCPServers_NotImplemented(t *testing.T) {
 }
 
 func TestConfig_ValidateForExecution_NotImplemented(t *testing.T) {
-
 	configResult := &config.Config{
 		App: struct {
 			Name    string `mapstructure:"name"`

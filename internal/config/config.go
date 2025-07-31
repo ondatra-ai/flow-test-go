@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/peterovchinnikov/flow-test-go/pkg/types"
 	"github.com/spf13/viper"
@@ -16,6 +17,12 @@ var (
 	// ErrOpenRouterAPIKeyRequired is returned when OpenRouter API key is missing.
 	ErrOpenRouterAPIKeyRequired = errors.New("OpenRouter API key is required for execution " +
 		"(set OPENROUTER_API_KEY env var or llm.apiKey in config)")
+
+	// ErrInvalidFlowID is returned when a flow ID contains path separators.
+	ErrInvalidFlowID = errors.New("invalid flow ID: must not contain path separators")
+
+	// ErrInvalidServerName is returned when a server name contains path separators.
+	ErrInvalidServerName = errors.New("invalid server name: must not contain path separators")
 )
 
 // Config represents the application configuration.
@@ -164,6 +171,11 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 
 // LoadFlow loads a flow definition by ID.
 func (cm *Manager) LoadFlow(flowID string) (*types.FlowDefinition, error) {
+	// Validate flowID contains no path separators
+	if strings.ContainsAny(flowID, "/\\") || strings.Contains(flowID, "..") {
+		return nil, ErrInvalidFlowID
+	}
+
 	flowPath := filepath.Join(cm.flowsDir, flowID+".json")
 
 	data, err := os.ReadFile(flowPath) // #nosec G304
@@ -246,6 +258,11 @@ func (cm *Manager) LoadMCPServers() (map[string]*types.MCPServerConfig, error) {
 
 // SaveFlow saves a flow definition.
 func (cm *Manager) SaveFlow(flow *types.FlowDefinition) error {
+	// Validate flow ID contains no path separators
+	if strings.ContainsAny(flow.ID, "/\\") || strings.Contains(flow.ID, "..") {
+		return ErrInvalidFlowID
+	}
+
 	err := flow.Validate()
 	if err != nil {
 		return fmt.Errorf("flow validation failed: %w", err)
@@ -270,6 +287,11 @@ func (cm *Manager) SaveFlow(flow *types.FlowDefinition) error {
 
 // SaveMCPServer saves an MCP server configuration.
 func (cm *Manager) SaveMCPServer(server *types.MCPServerConfig) error {
+	// Validate server name contains no path separators
+	if strings.ContainsAny(server.Name, "/\\") || strings.Contains(server.Name, "..") {
+		return ErrInvalidServerName
+	}
+
 	err := server.Validate()
 	if err != nil {
 		return fmt.Errorf("server config validation failed: %w", err)
