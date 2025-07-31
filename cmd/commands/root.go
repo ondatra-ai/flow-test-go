@@ -184,23 +184,3 @@ func createDisabledHelpCommand() *cobra.Command {
 		SuggestionsMinimumDistance: 0,
 	}
 }
-
-// ResetGlobalState is a no-op for legacy test compatibility.
-// Deprecated: This is only for legacy test compatibility.
-func ResetGlobalState() {
-	// No-op since we no longer have global state
-}
-
-// CreateRootCmd creates a new root command instance for testing.
-// This avoids sharing command state between tests.
-func CreateRootCmd() *cobra.Command {
-	// Create a new state instance for testing
-	testState := NewGlobalState()
-
-	cmd := createBaseCommand(testState)
-
-	// Add subcommands
-	cmd.AddCommand(CreateListCommand(testState))
-
-	return cmd
-}
