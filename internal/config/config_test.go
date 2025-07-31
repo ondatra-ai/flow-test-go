@@ -302,109 +302,12 @@ func TestManager_SaveMCPServer(t *testing.T) {
 		Metadata:    make(map[string]any),
 	}
 
-	// Note: SaveMCPServer method needs to be implemented
-	// For now, just verify the config is valid
+	// Validate the server configuration
 	err = serverConfig.Validate()
 	require.NoError(t, err)
 
-	// Use manager to ensure it's used
+	// Verify manager is available for when SaveMCPServer is implemented
 	assert.NotNil(t, manager)
-
-	// File creation would happen in actual SaveMCPServer implementation
-}
-
-func TestManager_LoadMCPServer_NotImplemented(t *testing.T) {
-	// Create a temporary directory for testing
-	tmpDir := t.TempDir()
-	// Change to temp directory
-	t.Chdir(tmpDir)
-
-	manager, err := config.NewManager()
-	require.NoError(t, err)
-
-	// Note: This test is a placeholder until LoadMCPServer is implemented
-	assert.NotNil(t, manager)
-}
-
-func TestManager_ListMCPServers_NotImplemented(t *testing.T) {
-	// Create a temporary directory for testing
-	tmpDir := t.TempDir()
-	// Change to temp directory
-	t.Chdir(tmpDir)
-
-	manager, err := config.NewManager()
-	require.NoError(t, err)
-
-	// Note: This test is a placeholder until ListMCPServers is implemented
-	assert.NotNil(t, manager)
-}
-
-func TestConfig_ValidateForExecution_NotImplemented(t *testing.T) {
-	configResult := &config.Config{
-		App: struct {
-			Name    string `mapstructure:"name"`
-			Version string `mapstructure:"version"`
-			Debug   bool   `mapstructure:"debug"`
-		}{
-			Name:    "",
-			Version: "",
-			Debug:   false,
-		},
-		LLM: struct {
-			Provider       string            `mapstructure:"provider"`
-			APIKey         string            `mapstructure:"apiKey"`
-			DefaultModel   string            `mapstructure:"defaultModel"`
-			ModelOverrides map[string]string `mapstructure:"modelOverrides"`
-			MaxTokens      int               `mapstructure:"maxTokens"`
-			Temperature    float64           `mapstructure:"temperature"`
-		}{
-			Provider:       "",
-			APIKey:         "",
-			DefaultModel:   "",
-			ModelOverrides: nil,
-			MaxTokens:      0,
-			Temperature:    0.0,
-		},
-		GitHub: struct {
-			Token         string `mapstructure:"token"`
-			Owner         string `mapstructure:"owner"`
-			Repository    string `mapstructure:"repository"`
-			DefaultBranch string `mapstructure:"defaultBranch"`
-		}{
-			Token:         "",
-			Owner:         "",
-			Repository:    "",
-			DefaultBranch: "",
-		},
-		Flow: struct {
-			Directory      string `mapstructure:"directory"`
-			DefaultTimeout string `mapstructure:"defaultTimeout"`
-			CheckpointDir  string `mapstructure:"checkpointDir"`
-			MaxRetries     int    `mapstructure:"maxRetries"`
-			EnableParallel bool   `mapstructure:"enableParallel"`
-		}{
-			Directory:      "",
-			DefaultTimeout: "",
-			CheckpointDir:  "",
-			MaxRetries:     0,
-			EnableParallel: false,
-		},
-		Logging: struct {
-			Level   string `mapstructure:"level"`
-			Format  string `mapstructure:"format"`
-			File    string `mapstructure:"file"`
-			Console bool   `mapstructure:"console"`
-		}{
-			Level:   "",
-			Format:  "",
-			File:    "",
-			Console: false,
-		},
-	}
-
-	// Note: ValidateForExecution method needs to be implemented
-	// For now, just verify config is not nil
-	assert.NotNil(t, configResult)
 }
 
 // Benchmark tests.
