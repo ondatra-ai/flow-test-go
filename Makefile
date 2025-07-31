@@ -1,6 +1,7 @@
 # Build the application
 .PHONY: build
 build:
+	@mkdir -p bin
 	go build -o bin/flow-test-go ./cmd/flow-test-go
 
 # Run tests with coverage
