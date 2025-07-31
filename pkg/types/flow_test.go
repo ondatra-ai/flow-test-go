@@ -22,32 +22,71 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		{
 			name: "valid flow",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "1.0",
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps: map[string]types.Step{
 					"step1": {
 						Type: types.StepTypePrompt,
 						Prompt: &types.PromptConfig{
 							Template: "Hello {{.name}}",
+							System:   "",
+							Context:  make(map[string]any),
 						},
-						Next: "step2",
+						Model:      "",
+						Tools:      []string{},
+						MCPServer:  "",
+						Next:       "step2",
+						Conditions: []types.ConditionConfig{},
+						Timeout:    nil,
+						Retry:      nil,
+						Metadata:   make(map[string]any),
 					},
 					"step2": {
-						Type: types.StepTypeEnd,
+						Type:       types.StepTypeEnd,
+						Prompt:     nil,
+						Model:      "",
+						Tools:      []string{},
+						MCPServer:  "",
+						Next:       "",
+						Conditions: []types.ConditionConfig{},
+						Timeout:    nil,
+						Retry:      nil,
+						Metadata:   make(map[string]any),
 					},
 				},
+				InitialStep: "",
 			},
 			wantErr: false,
+			errMsg:  "",
 		},
 		{
 			name: "missing flow ID",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "",
+				ID:          "",
 				Name:        "Test Flow",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps: map[string]types.Step{
-					"step1": {Type: types.StepTypePrompt},
+					"step1": {
+						Type:       types.StepTypePrompt,
+						Prompt:     nil,
+						Model:      "",
+						Tools:      []string{},
+						MCPServer:  "",
+						Next:       "",
+						Conditions: []types.ConditionConfig{},
+						Timeout:    nil,
+						Retry:      nil,
+						Metadata:   make(map[string]any),
+					},
 				},
+				InitialStep: "",
 			},
 			wantErr: true,
 			errMsg:  "flow ID is required",
@@ -55,11 +94,27 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		{
 			name: "missing flow name",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "",
 				ID:          "test-flow",
+				Name:        "",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps: map[string]types.Step{
-					"step1": {Type: types.StepTypePrompt},
+					"step1": {
+						Type:       types.StepTypePrompt,
+						Prompt:     nil,
+						Model:      "",
+						Tools:      []string{},
+						MCPServer:  "",
+						Next:       "",
+						Conditions: []types.ConditionConfig{},
+						Timeout:    nil,
+						Retry:      nil,
+						Metadata:   make(map[string]any),
+					},
 				},
+				InitialStep: "",
 			},
 			wantErr: true,
 			errMsg:  "flow name is required",
@@ -67,10 +122,14 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		{
 			name: "no steps",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "",
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps:       map[string]types.Step{},
+				InitialStep: "",
 			},
 			wantErr: true,
 			errMsg:  "flow must have at least one step",
@@ -78,15 +137,27 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		{
 			name: "prompt step without prompt config",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "",
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps: map[string]types.Step{
 					"step1": {
-						Type: types.StepTypePrompt,
-						// Missing Prompt config
+						Type:       types.StepTypePrompt,
+						Prompt:     nil, // Missing Prompt config
+						Model:      "",
+						Tools:      []string{},
+						MCPServer:  "",
+						Next:       "",
+						Conditions: []types.ConditionConfig{},
+						Timeout:    nil,
+						Retry:      nil,
+						Metadata:   make(map[string]any),
 					},
 				},
+				InitialStep: "",
 			},
 			wantErr: true,
 			errMsg:  "prompt step must have prompt configuration",
@@ -94,15 +165,27 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		{
 			name: "condition step without conditions",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "",
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps: map[string]types.Step{
 					"step1": {
-						Type: types.StepTypeCondition,
-						// Missing Conditions
+						Type:       types.StepTypeCondition,
+						Prompt:     nil,
+						Model:      "",
+						Tools:      []string{},
+						MCPServer:  "",
+						Next:       "",
+						Conditions: []types.ConditionConfig{}, // Missing Conditions
+						Timeout:    nil,
+						Retry:      nil,
+						Metadata:   make(map[string]any),
 					},
 				},
+				InitialStep: "",
 			},
 			wantErr: true,
 			errMsg:  "condition step must have at least one condition",
@@ -110,18 +193,31 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		{
 			name: "invalid next step reference",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "",
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps: map[string]types.Step{
 					"step1": {
 						Type: types.StepTypePrompt,
 						Prompt: &types.PromptConfig{
 							Template: "Hello",
+							System:   "",
+							Context:  make(map[string]any),
 						},
-						Next: "nonexistent", // Invalid reference
+						Model:      "",
+						Tools:      []string{},
+						MCPServer:  "",
+						Next:       "nonexistent", // Invalid reference
+						Conditions: []types.ConditionConfig{},
+						Timeout:    nil,
+						Retry:      nil,
+						Metadata:   make(map[string]any),
 					},
 				},
+				InitialStep: "",
 			},
 			wantErr: true,
 			errMsg:  "step references non-existent next step",
@@ -129,20 +225,32 @@ func TestFlowDefinition_Validate(t *testing.T) {
 		{
 			name: "invalid condition next reference",
 			flow: types.FlowDefinition{
+				Schema:      "",
+				Version:     "",
 				ID:          "test-flow",
 				Name:        "Test Flow",
 				Description: "A test flow",
+				Variables:   make(map[string]string),
 				Steps: map[string]types.Step{
 					"step1": {
-						Type: types.StepTypeCondition,
+						Type:      types.StepTypeCondition,
+						Prompt:    nil,
+						Model:     "",
+						Tools:     []string{},
+						MCPServer: "",
+						Next:      "",
 						Conditions: []types.ConditionConfig{
 							{
 								Expression: "true",
 								Next:       "nonexistent", // Invalid reference
 							},
 						},
+						Timeout:  nil,
+						Retry:    nil,
+						Metadata: make(map[string]any),
 					},
 				},
+				InitialStep: "",
 			},
 			wantErr: true,
 			errMsg:  "condition references non-existent step",
@@ -175,10 +283,12 @@ func TestExecutionError_Error(t *testing.T) {
 	t.Parallel()
 
 	err := &types.ExecutionError{
-		Code:      "TEST_ERROR",
-		Message:   "test error message",
-		Details:   map[string]any{"key": "value"},
-		Timestamp: time.Now(),
+		Code:        "TEST_ERROR",
+		Message:     "test error message",
+		Details:     map[string]any{"key": "value"},
+		Recoverable: false,
+		Timestamp:   time.Now(),
+		StackTrace:  "",
 	}
 
 	errorStr := err.Error()
@@ -263,6 +373,7 @@ func TestRetryConfig_Validation(t *testing.T) {
 	retry := &types.RetryConfig{
 		MaxAttempts: 3,
 		Delay:       time.Second * 5,
+		Backoff:     "",
 	}
 
 	// Basic validation
@@ -273,24 +384,47 @@ func TestRetryConfig_Validation(t *testing.T) {
 // Benchmark tests.
 func BenchmarkFlowDefinition_Validate(b *testing.B) {
 	flow := types.FlowDefinition{
+		Schema:      "",
+		Version:     "1.0",
 		ID:          "bench-flow",
 		Name:        "Benchmark Flow",
 		Description: "A benchmark flow",
+		Variables:   make(map[string]string),
 		Steps: map[string]types.Step{
 			"step1": {
 				Type: types.StepTypePrompt,
 				Prompt: &types.PromptConfig{
 					Template: "Hello {{.name}}",
+					System:   "",
+					Context:  make(map[string]any),
 				},
-				Next: "step2",
+				Model:      "",
+				Tools:      []string{},
+				MCPServer:  "",
+				Next:       "step2",
+				Conditions: []types.ConditionConfig{},
+				Timeout:    nil,
+				Retry:      nil,
+				Metadata:   make(map[string]any),
 			},
 			"step2": {
-				Type: types.StepTypeEnd,
+				Type:       types.StepTypeEnd,
+				Prompt:     nil,
+				Model:      "",
+				Tools:      []string{},
+				MCPServer:  "",
+				Next:       "",
+				Conditions: []types.ConditionConfig{},
+				Timeout:    nil,
+				Retry:      nil,
+				Metadata:   make(map[string]any),
 			},
 		},
+		InitialStep: "",
 	}
 
 	b.ResetTimer()
+
 	for range b.N {
 		_ = flow.Validate()
 	}

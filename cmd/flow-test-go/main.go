@@ -6,5 +6,8 @@ import (
 )
 
 func main() {
-	commands.Execute()
+	// Create application state
+	state := commands.NewGlobalState()
+
+	commands.Execute(state)
 }

@@ -78,20 +78,24 @@ func NewManager() (*Manager, error) {
 
 	// Create config directories (MkdirAll is idempotent and handles concurrent creation)
 	const dirPerms = 0750
+
 	err := os.MkdirAll(configDir, dirPerms)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
+
 	err = os.MkdirAll(filepath.Join(configDir, "flows"), dirPerms)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create flows directory: %w", err)
 	}
+
 	err = os.MkdirAll(filepath.Join(configDir, "servers"), dirPerms)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create servers directory: %w", err)
 	}
 
 	return &Manager{
+		config:     nil,
 		configDir:  configDir,
 		flowsDir:   filepath.Join(configDir, "flows"),
 		serversDir: filepath.Join(configDir, "servers"),
@@ -116,6 +120,7 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 
 	// Read config file
 	var err error
+
 	err = viper.ReadInConfig()
 	if err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
@@ -126,7 +131,8 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 	}
 
 	// Unmarshal configuration
-	config := &Config{}
+	config := cm.createDefaultConfig()
+
 	err = viper.Unmarshal(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
@@ -138,6 +144,7 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 			config.LLM.APIKey = apiKey
 		}
 	}
+
 	if config.GitHub.Token == "" {
 		if token := os.Getenv("GITHUB_TOKEN"); token != "" {
 			config.GitHub.Token = token
@@ -151,6 +158,7 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 	}
 
 	cm.config = config
+
 	return config, nil
 }
 
@@ -164,6 +172,7 @@ func (cm *Manager) LoadFlow(flowID string) (*types.FlowDefinition, error) {
 	}
 
 	var flow types.FlowDefinition
+
 	err = json.Unmarshal(data, &flow)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse flow definition: %w", err)
@@ -185,6 +194,7 @@ func (cm *Manager) ListFlows() ([]string, error) {
 	}
 
 	var flows []string
+
 	for _, file := range files {
 		if !file.IsDir() && filepath.Ext(file.Name()) == ".json" {
 			flowID := file.Name()[:len(file.Name())-5] // Remove .json extension
@@ -210,17 +220,21 @@ func (cm *Manager) LoadMCPServers() (map[string]*types.MCPServerConfig, error) {
 		}
 
 		serverPath := filepath.Join(cm.serversDir, file.Name())
+
 		data, err := os.ReadFile(serverPath) // #nosec G304
 		if err != nil {
 			return nil, fmt.Errorf("failed to read server config %s: %w", serverPath, err)
 		}
 
 		var serverConfig types.MCPServerConfig
-		if err := json.Unmarshal(data, &serverConfig); err != nil {
+
+		err = json.Unmarshal(data, &serverConfig)
+		if err != nil {
 			return nil, fmt.Errorf("failed to parse server config %s: %w", serverPath, err)
 		}
 
-		if err := serverConfig.Validate(); err != nil {
+		err = serverConfig.Validate()
+		if err != nil {
 			return nil, fmt.Errorf("server config validation failed for %s: %w", serverConfig.Name, err)
 		}
 
@@ -232,7 +246,8 @@ func (cm *Manager) LoadMCPServers() (map[string]*types.MCPServerConfig, error) {
 
 // SaveFlow saves a flow definition.
 func (cm *Manager) SaveFlow(flow *types.FlowDefinition) error {
-	if err := flow.Validate(); err != nil {
+	err := flow.Validate()
+	if err != nil {
 		return fmt.Errorf("flow validation failed: %w", err)
 	}
 
@@ -242,8 +257,11 @@ func (cm *Manager) SaveFlow(flow *types.FlowDefinition) error {
 	}
 
 	flowPath := filepath.Join(cm.flowsDir, flow.ID+".json")
+
 	const filePerms = 0600
-	if err := os.WriteFile(flowPath, data, filePerms); err != nil {
+
+	err = os.WriteFile(flowPath, data, filePerms)
+	if err != nil {
 		return fmt.Errorf("failed to write flow file: %w", err)
 	}
 
@@ -252,7 +270,8 @@ func (cm *Manager) SaveFlow(flow *types.FlowDefinition) error {
 
 // SaveMCPServer saves an MCP server configuration.
 func (cm *Manager) SaveMCPServer(server *types.MCPServerConfig) error {
-	if err := server.Validate(); err != nil {
+	err := server.Validate()
+	if err != nil {
 		return fmt.Errorf("server config validation failed: %w", err)
 	}
 
@@ -262,8 +281,11 @@ func (cm *Manager) SaveMCPServer(server *types.MCPServerConfig) error {
 	}
 
 	const filePerms = 0600
+
 	serverPath := filepath.Join(cm.serversDir, server.Name+".json")
-	if err := os.WriteFile(serverPath, data, filePerms); err != nil {
+
+	err = os.WriteFile(serverPath, data, filePerms)
+	if err != nil {
 		return fmt.Errorf("failed to write server config file: %w", err)
 	}
 
@@ -285,6 +307,118 @@ func (cm *Manager) ValidateForExecution(config *Config) error {
 	return nil
 }
 
+// createDefaultConfig creates a default configuration structure.
+func (cm *Manager) createDefaultConfig() *Config {
+	return &Config{
+		App:     cm.createDefaultAppConfig(),
+		LLM:     cm.createDefaultLLMConfig(),
+		GitHub:  cm.createDefaultGitHubConfig(),
+		Flow:    cm.createDefaultFlowConfig(),
+		Logging: cm.createDefaultLoggingConfig(),
+	}
+}
+
+func (cm *Manager) createDefaultAppConfig() struct {
+	Name    string `mapstructure:"name"`
+	Version string `mapstructure:"version"`
+	Debug   bool   `mapstructure:"debug"`
+} {
+	return struct {
+		Name    string `mapstructure:"name"`
+		Version string `mapstructure:"version"`
+		Debug   bool   `mapstructure:"debug"`
+	}{
+		Name:    "",
+		Version: "",
+		Debug:   false,
+	}
+}
+
+func (cm *Manager) createDefaultLLMConfig() struct {
+	Provider       string            `mapstructure:"provider"`
+	APIKey         string            `mapstructure:"apiKey"`
+	DefaultModel   string            `mapstructure:"defaultModel"`
+	ModelOverrides map[string]string `mapstructure:"modelOverrides"`
+	MaxTokens      int               `mapstructure:"maxTokens"`
+	Temperature    float64           `mapstructure:"temperature"`
+} {
+	return struct {
+		Provider       string            `mapstructure:"provider"`
+		APIKey         string            `mapstructure:"apiKey"`
+		DefaultModel   string            `mapstructure:"defaultModel"`
+		ModelOverrides map[string]string `mapstructure:"modelOverrides"`
+		MaxTokens      int               `mapstructure:"maxTokens"`
+		Temperature    float64           `mapstructure:"temperature"`
+	}{
+		Provider:       "",
+		APIKey:         "",
+		DefaultModel:   "",
+		ModelOverrides: nil,
+		MaxTokens:      0,
+		Temperature:    0.0,
+	}
+}
+
+func (cm *Manager) createDefaultGitHubConfig() struct {
+	Token         string `mapstructure:"token"`
+	Owner         string `mapstructure:"owner"`
+	Repository    string `mapstructure:"repository"`
+	DefaultBranch string `mapstructure:"defaultBranch"`
+} {
+	return struct {
+		Token         string `mapstructure:"token"`
+		Owner         string `mapstructure:"owner"`
+		Repository    string `mapstructure:"repository"`
+		DefaultBranch string `mapstructure:"defaultBranch"`
+	}{
+		Token:         "",
+		Owner:         "",
+		Repository:    "",
+		DefaultBranch: "",
+	}
+}
+
+func (cm *Manager) createDefaultFlowConfig() struct {
+	Directory      string `mapstructure:"directory"`
+	DefaultTimeout string `mapstructure:"defaultTimeout"`
+	CheckpointDir  string `mapstructure:"checkpointDir"`
+	MaxRetries     int    `mapstructure:"maxRetries"`
+	EnableParallel bool   `mapstructure:"enableParallel"`
+} {
+	return struct {
+		Directory      string `mapstructure:"directory"`
+		DefaultTimeout string `mapstructure:"defaultTimeout"`
+		CheckpointDir  string `mapstructure:"checkpointDir"`
+		MaxRetries     int    `mapstructure:"maxRetries"`
+		EnableParallel bool   `mapstructure:"enableParallel"`
+	}{
+		Directory:      "",
+		DefaultTimeout: "",
+		CheckpointDir:  "",
+		MaxRetries:     0,
+		EnableParallel: false,
+	}
+}
+
+func (cm *Manager) createDefaultLoggingConfig() struct {
+	Level   string `mapstructure:"level"`
+	Format  string `mapstructure:"format"`
+	File    string `mapstructure:"file"`
+	Console bool   `mapstructure:"console"`
+} {
+	return struct {
+		Level   string `mapstructure:"level"`
+		Format  string `mapstructure:"format"`
+		File    string `mapstructure:"file"`
+		Console bool   `mapstructure:"console"`
+	}{
+		Level:   "",
+		Format:  "",
+		File:    "",
+		Console: false,
+	}
+}
+
 // setDefaults sets default configuration values.
 func (cm *Manager) setDefaults() {
 	// App defaults
@@ -295,10 +429,12 @@ func (cm *Manager) setDefaults() {
 	// LLM defaults
 	viper.SetDefault("llm.provider", "openrouter")
 	viper.SetDefault("llm.defaultModel", "openai/gpt-4-turbo")
+
 	const (
 		defaultMaxTokens   = 4096
 		defaultTemperature = 0.7
 	)
+
 	viper.SetDefault("llm.maxTokens", defaultMaxTokens)
 	viper.SetDefault("llm.temperature", defaultTemperature)
 
@@ -311,7 +447,9 @@ func (cm *Manager) setDefaults() {
 	viper.SetDefault("flow.directory", ".flows")
 	viper.SetDefault("flow.defaultTimeout", "5m")
 	viper.SetDefault("flow.checkpointDir", ".flows/checkpoints")
+
 	const defaultMaxRetries = 3
+
 	viper.SetDefault("flow.maxRetries", defaultMaxRetries)
 	viper.SetDefault("flow.enableParallel", true)
 

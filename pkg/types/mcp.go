@@ -139,41 +139,56 @@ type MCPError struct {
 func (m *MCPServerConfig) Validate() error {
 	if m.Name == "" {
 		return &ExecutionError{
-			Code:      "INVALID_MCP_CONFIG",
-			Message:   "server name is required",
-			Timestamp: time.Now(),
+			Code:        "INVALID_MCP_CONFIG",
+			Message:     "server name is required",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
 	if m.Command == "" {
 		return &ExecutionError{
-			Code:      "INVALID_MCP_CONFIG",
-			Message:   "server command is required",
-			Timestamp: time.Now(),
+			Code:        "INVALID_MCP_CONFIG",
+			Message:     "server command is required",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
 	if m.TransportType != TransportStdio && m.TransportType != TransportHTTP {
 		return &ExecutionError{
-			Code:      "INVALID_MCP_CONFIG",
-			Message:   "invalid transport type",
-			Timestamp: time.Now(),
+			Code:        "INVALID_MCP_CONFIG",
+			Message:     "invalid transport type",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
 	if !m.Capabilities.Tools && !m.Capabilities.Resources && !m.Capabilities.Prompts {
 		return &ExecutionError{
-			Code:      "INVALID_MCP_CONFIG",
-			Message:   "server must have at least one capability enabled",
-			Timestamp: time.Now(),
+			Code:        "INVALID_MCP_CONFIG",
+			Message:     "server must have at least one capability enabled",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
 	if m.TransportType == TransportHTTP && len(m.TransportOptions) == 0 {
 		return &ExecutionError{
-			Code:      "INVALID_MCP_CONFIG",
-			Message:   "HTTP transport requires transport options",
-			Timestamp: time.Now(),
+			Code:        "INVALID_MCP_CONFIG",
+			Message:     "HTTP transport requires transport options",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 

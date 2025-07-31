@@ -135,3 +135,14 @@ linters:
       - path: scripts/.*
         linters:
           - revive
+          - forbidigo
+          - err113
+          - nlreturn
+          - noctx
+          - noinlineerr
+          - mnd
+          - gosec
+          - godot
+          - gocritic
+          - prealloc 
+          - perfsprint

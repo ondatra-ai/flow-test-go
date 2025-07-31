@@ -44,10 +44,12 @@ type PullRequest struct {
 // getCurrentBranch gets the current git branch name
 func getCurrentBranch() string {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+
 	output, err := cmd.Output()
 	if err != nil {
 		log.Fatalf("Error getting current branch: %v", err)
 	}
+
 	return strings.TrimSpace(string(output))
 }
 
@@ -63,24 +65,26 @@ func handleError(err error) {
 	default:
 		fmt.Fprintf(os.Stderr, "Error fetching PR information: %v\n", err)
 	}
+
 	os.Exit(1)
 }
 
 // displayPR displays PR information
-func displayPR(pr PullRequest, branch string) {
+func displayPR(pullRequest PullRequest, branch string) {
 	fmt.Printf("\nCurrent branch: %s\n", branch)
-	fmt.Printf("PR #%d: %s\n", pr.Number, pr.Title)
-	fmt.Printf("State: %s\n", pr.State)
-	fmt.Printf("URL: %s\n", pr.URL)
+	fmt.Printf("PR #%d: %s\n", pullRequest.Number, pullRequest.Title)
+	fmt.Printf("State: %s\n", pullRequest.State)
+	fmt.Printf("URL: %s\n", pullRequest.URL)
 
 	// Output just the PR number for easy scripting
-	fmt.Printf("\nPR Number: %d\n", pr.Number)
+	fmt.Printf("\nPR Number: %d\n", pullRequest.Number)
 }
 
 // checkForClosedPRs checks for closed/merged PRs on the branch
 func checkForClosedPRs(branch string) {
 	cmd := exec.Command("gh", "pr", "list", "--head", branch, "--state", "all",
 		"--json", "number,title,state,url", "--limit", "5")
+
 	output, err := cmd.Output()
 	if err != nil {
 		return // Ignore errors for closed PRs check
@@ -93,6 +97,7 @@ func checkForClosedPRs(branch string) {
 
 	if len(allPRs) > 0 {
 		fmt.Println("\nFound closed/merged PRs:")
+
 		for _, pr := range allPRs {
 			fmt.Printf("  PR #%d: %s (%s)\n", pr.Number, pr.Title, pr.State)
 			fmt.Printf("  URL: %s\n", pr.URL)
@@ -110,6 +115,7 @@ func getPRForBranch(branch string) {
 	// Try to get PR using GitHub CLI search
 	cmd := exec.Command("gh", "pr", "list", "--head", branch,
 		"--json", "number,title,state,url", "--limit", "1")
+
 	output, err := cmd.Output()
 	if err != nil {
 		handleError(err)
@@ -124,6 +130,7 @@ func getPRForBranch(branch string) {
 		fmt.Printf("No PR found for branch: %s\n", branch)
 		// Try to find PRs that might have been merged or closed
 		checkForClosedPRs(branch)
+
 		return
 	}
 

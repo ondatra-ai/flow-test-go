@@ -75,6 +75,7 @@ func getPRNumber() string {
 		fmt.Fprintln(os.Stderr, "Usage: list-pr-conversations.go [PR_NUMBER]")
 		os.Exit(1)
 	}
+
 	return os.Args[1]
 }
 
@@ -155,6 +156,7 @@ func getPRComments(prNumber string) {
 	}
 
 	cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query, "-F", fmt.Sprintf("prNumber=%d", prNum))
+
 	output, err := cmd.Output()
 	if err != nil {
 		log.Fatalf("Error fetching PR comments: %v", err)
@@ -168,14 +170,16 @@ func getPRComments(prNumber string) {
 	conversations := parseConversations(data)
 
 	// Sort by creation date of first comment in each conversation
-	sort.Slice(conversations, func(i, j int) bool {
+	sort.Slice(conversations, func(index1, index2 int) bool {
 		var aTime, bTime time.Time
-		if len(conversations[i].Comments) > 0 {
-			aTime, _ = time.Parse(time.RFC3339, conversations[i].Comments[0].CreatedAt)
+		if len(conversations[index1].Comments) > 0 {
+			aTime, _ = time.Parse(time.RFC3339, conversations[index1].Comments[0].CreatedAt)
 		}
-		if len(conversations[j].Comments) > 0 {
-			bTime, _ = time.Parse(time.RFC3339, conversations[j].Comments[0].CreatedAt)
+
+		if len(conversations[index2].Comments) > 0 {
+			bTime, _ = time.Parse(time.RFC3339, conversations[index2].Comments[0].CreatedAt)
 		}
+
 		return aTime.Before(bTime)
 	})
 

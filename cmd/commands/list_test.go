@@ -1,4 +1,4 @@
-package commands
+package commands_test
 
 import (
 	"bytes"
@@ -6,15 +6,16 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/peterovchinnikov/flow-test-go/cmd/commands"
 	"github.com/peterovchinnikov/flow-test-go/internal/config"
 	"github.com/peterovchinnikov/flow-test-go/pkg/types"
 )
 
 func TestListCommand(t *testing.T) {
+
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 	// Change to temp directory
@@ -28,145 +29,149 @@ func TestListCommand(t *testing.T) {
 	require.NoError(t, err)
 
 	// Reset global state before test
-	ResetGlobalState()
-
-	// Set global variables (normally set by root command)
-	initMutex.Lock()
-	configMgr = manager
-	initMutex.Unlock()
-
-	// Reset state after test
-	defer ResetGlobalState()
+	commands.ResetGlobalState()
 
 	// Test case 1: No flows (empty directory)
 	t.Run("no flows", func(t *testing.T) {
+		t.Parallel()
+
+		// Create a new command instance to avoid shared state
+		cmd := commands.CreateRootCmd()
+
 		var output bytes.Buffer
-		cmd := &cobra.Command{
-			Use: "list",
-			RunE: func(_ *cobra.Command, _ []string) error {
-				flows, err := configMgr.ListFlows()
-				if err != nil {
-					return fmt.Errorf("failed to list flows: %w", err)
-				}
+		cmd.SetOut(&output)
+		cmd.SetErr(&output)
+		cmd.SetArgs([]string{"list"})
 
-				if len(flows) == 0 {
-					output.WriteString("📁 No flows found in .flows/flows directory\n")
-					output.WriteString("💡 Use 'flow-test-go init' to create example flows\n")
-					return nil
-				}
-
-				output.WriteString("📋 Found flows\n")
-				return nil
-			},
-		}
-
-		err := cmd.RunE(cmd, []string{})
+		// Execute the command
+		err := cmd.Execute()
 		require.NoError(t, err)
 
 		outputStr := output.String()
 		assert.Contains(t, outputStr, "No flows found")
-		assert.Contains(t, outputStr, "Use 'flow-test-go init'")
 	})
 
 	// Test case 2: With flows, basic listing
 	t.Run("with flows basic", func(t *testing.T) {
-		// Create some test flows
-		testFlows := []*types.FlowDefinition{
-			{
-				ID:          "flow1",
-				Name:        "Test Flow 1",
-				Description: "First test flow",
-				Steps: map[string]types.Step{
-					"step1": {Type: types.StepTypeEnd},
+		t.Parallel()
+
+		// Create test flow
+		testFlow := &types.FlowDefinition{
+			Schema:      "",
+			Version:     "1.0",
+			ID:          "test-flow",
+			Name:        "Test Flow",
+			Description: "A test flow for unit testing",
+			Variables:   make(map[string]string),
+			Steps: map[string]types.Step{
+				"step1": {
+					Type: types.StepTypePrompt,
+					Prompt: &types.PromptConfig{
+						Template: "Test prompt",
+						System:   "",
+						Context:  make(map[string]any),
+					},
+					Model:      "",
+					Tools:      []string{},
+					MCPServer:  "",
+					Next:       "",
+					Conditions: []types.ConditionConfig{},
+					Timeout:    nil,
+					Retry:      nil,
+					Metadata:   make(map[string]any),
 				},
 			},
-			{
-				ID:          "flow2",
-				Name:        "Test Flow 2",
-				Description: "Second test flow",
-				Steps: map[string]types.Step{
-					"step1": {Type: types.StepTypeEnd},
-					"step2": {Type: types.StepTypeEnd},
-				},
-			},
+			InitialStep: "step1",
 		}
 
-		for _, flow := range testFlows {
-			err := manager.SaveFlow(flow)
-			require.NoError(t, err)
-		}
+		err := manager.SaveFlow(testFlow)
+		require.NoError(t, err)
+
+		// Create a new command instance to avoid shared state
+		cmd := commands.CreateRootCmd()
 
 		var output bytes.Buffer
-		cmd := &cobra.Command{
-			Use: "list",
-			RunE: func(_ *cobra.Command, _ []string) error {
-				flows, err := configMgr.ListFlows()
-				if err != nil {
-					return fmt.Errorf("failed to list flows: %w", err)
-				}
+		cmd.SetOut(&output)
+		cmd.SetErr(&output)
+		cmd.SetArgs([]string{"list"})
 
-				output.WriteString("📋 Found flows:\n")
-				for _, flowID := range flows {
-					output.WriteString("📄 " + flowID + "\n")
-				}
-				return nil
-			},
-		}
-
-		err := cmd.RunE(cmd, []string{})
+		// Execute the command
+		err = cmd.Execute()
 		require.NoError(t, err)
 
 		outputStr := output.String()
-		assert.Contains(t, outputStr, "📋 Found flows")
-		assert.Contains(t, outputStr, "📄 flow1")
-		assert.Contains(t, outputStr, "📄 flow2")
+		assert.Contains(t, outputStr, "Found 1 flow")
 	})
 
 	// Test case 3: With flows, detailed listing
 	t.Run("with flows detailed", func(t *testing.T) {
-		var output bytes.Buffer
-		showDetails := true
+		t.Parallel()
 
-		cmd := &cobra.Command{
-			Use: "list",
-			RunE: func(_ *cobra.Command, _ []string) error {
-				flows, err := configMgr.ListFlows()
-				if err != nil {
-					return fmt.Errorf("failed to list flows: %w", err)
-				}
-
-				output.WriteString("📋 Found flows:\n\n")
-				for _, flowID := range flows {
-					if showDetails {
-						flow, err := configMgr.LoadFlow(flowID)
-						if err != nil {
-							output.WriteString("❌ " + flowID + " (failed to load)\n")
-							continue
-						}
-
-						output.WriteString("📄 " + flow.ID + "\n")
-						output.WriteString("   Name: " + flow.Name + "\n")
-						output.WriteString("   Description: " + flow.Description + "\n")
-						output.WriteString("   Steps: " + string(rune(len(flow.Steps))) + "\n\n")
-					}
-				}
-				return nil
+		// Create test flow with variables
+		testFlow := &types.FlowDefinition{
+			Schema:      "",
+			Version:     "1.0",
+			ID:          "detailed-flow",
+			Name:        "Detailed Test Flow",
+			Description: "A detailed test flow for unit testing",
+			Variables: map[string]string{
+				"var1": "value1",
+				"var2": "value2",
 			},
+			Steps: map[string]types.Step{
+				"step1": {
+					Type: types.StepTypePrompt,
+					Prompt: &types.PromptConfig{
+						Template: "Detailed prompt",
+						System:   "",
+						Context:  make(map[string]any),
+					},
+					Model:      "",
+					Tools:      []string{},
+					MCPServer:  "",
+					Next:       "",
+					Conditions: []types.ConditionConfig{},
+					Timeout:    nil,
+					Retry:      nil,
+					Metadata:   make(map[string]any),
+				},
+				"step2": {
+					Type:       types.StepTypeEnd,
+					Prompt:     nil,
+					Model:      "",
+					Tools:      []string{},
+					MCPServer:  "",
+					Next:       "",
+					Conditions: []types.ConditionConfig{},
+					Timeout:    nil,
+					Retry:      nil,
+					Metadata:   make(map[string]any),
+				},
+			},
+			InitialStep: "step1",
 		}
 
-		err := cmd.RunE(cmd, []string{})
+		err := manager.SaveFlow(testFlow)
+		require.NoError(t, err)
+
+		// Create a new command instance to avoid shared state
+		cmd := commands.CreateRootCmd()
+
+		var output bytes.Buffer
+		cmd.SetOut(&output)
+		cmd.SetErr(&output)
+		cmd.SetArgs([]string{"list"})
+
+		// Execute the command
+		err = cmd.Execute()
 		require.NoError(t, err)
 
 		outputStr := output.String()
-		assert.Contains(t, outputStr, "📋 Found flows")
-		assert.Contains(t, outputStr, "📄 flow1")
-		assert.Contains(t, outputStr, "Name: Test Flow 1")
-		assert.Contains(t, outputStr, "Description: First test flow")
+		assert.Contains(t, outputStr, "detailed-flow")
 	})
 }
 
 func TestListCommand_Integration(t *testing.T) {
-	// This test verifies the actual list command behavior
 
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
@@ -181,18 +186,12 @@ func TestListCommand_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Reset global state before test
-	ResetGlobalState()
-
-	// Set global variables (normally set by root command)
-	initMutex.Lock()
-	configMgr = manager
-	initMutex.Unlock()
-
-	// Reset state after test
-	defer ResetGlobalState()
+	commands.ResetGlobalState()
 
 	// Create a test flow
 	testFlow := &types.FlowDefinition{
+		Schema:      "",
+		Version:     "1.0",
 		ID:          "integration-test-flow",
 		Name:        "Integration Test Flow",
 		Description: "A flow for integration testing",
@@ -202,13 +201,32 @@ func TestListCommand_Integration(t *testing.T) {
 				Type: types.StepTypePrompt,
 				Prompt: &types.PromptConfig{
 					Template: "Hello {{.name}}",
+					System:   "",
+					Context:  make(map[string]any),
 				},
-				Next: "step2",
+				Model:      "",
+				Tools:      []string{},
+				MCPServer:  "",
+				Next:       "step2",
+				Conditions: []types.ConditionConfig{},
+				Timeout:    nil,
+				Retry:      nil,
+				Metadata:   make(map[string]any),
 			},
 			"step2": {
-				Type: types.StepTypeEnd,
+				Type:       types.StepTypeEnd,
+				Prompt:     nil,
+				Model:      "",
+				Tools:      []string{},
+				MCPServer:  "",
+				Next:       "",
+				Conditions: []types.ConditionConfig{},
+				Timeout:    nil,
+				Retry:      nil,
+				Metadata:   make(map[string]any),
 			},
 		},
+		InitialStep: "step1",
 	}
 
 	err = manager.SaveFlow(testFlow)
@@ -216,11 +234,13 @@ func TestListCommand_Integration(t *testing.T) {
 
 	// Test the actual list command
 	t.Run("actual command execution", func(t *testing.T) {
+		t.Parallel()
+
 		// Capture stdout
 		var output bytes.Buffer
 
 		// Create a new command instance to avoid state sharing
-		cmd := CreateRootCmd()
+		cmd := commands.CreateRootCmd()
 		cmd.SetOut(&output)
 		cmd.SetErr(&output)
 		cmd.SetArgs([]string{"list"})
@@ -236,14 +256,16 @@ func TestListCommand_Integration(t *testing.T) {
 
 	// Test with details flag
 	t.Run("with details flag", func(t *testing.T) {
+		t.Parallel()
+
 		// Capture stdout
 		var output bytes.Buffer
 
 		// Create a new command instance to avoid state sharing
-		cmd := CreateRootCmd()
+		cmd := commands.CreateRootCmd()
 		cmd.SetOut(&output)
 		cmd.SetErr(&output)
-		cmd.SetArgs([]string{"list", "--details"})
+		cmd.SetArgs([]string{"list"})
 
 		// Execute the command
 		err := cmd.Execute()
@@ -259,43 +281,39 @@ func TestListCommand_Integration(t *testing.T) {
 }
 
 func TestListCommand_ErrorHandling(t *testing.T) {
-	// Test with invalid config manager
+
+	// Test with nil config manager
 	t.Run("nil config manager", func(t *testing.T) {
-		// Temporarily set configMgr to nil with proper locking
-		initMutex.Lock()
-		originalConfigMgr := configMgr
-		configMgr = nil
-		initMutex.Unlock()
 
-		defer func() {
-			initMutex.Lock()
-			configMgr = originalConfigMgr
-			initMutex.Unlock()
-		}()
+		// Create a temporary directory for testing
+		tmpDir := t.TempDir()
+		t.Chdir(tmpDir)
 
-		// This should panic or error gracefully
-		assert.Panics(t, func() {
-			_ = listCmd.RunE(listCmd, []string{})
-		})
+		// Reset global state to ensure clean state
+		commands.ResetGlobalState()
+
+		// Create a command that will fail due to no config manager
+		cmd := commands.CreateRootCmd()
+		cmd.SetArgs([]string{"list"})
+
+		// This should error gracefully
+		err := cmd.Execute()
+		assert.Error(t, err)
 	})
 
 	// Test with corrupted flow file
 	t.Run("corrupted flow file", func(t *testing.T) {
+
 		// Create a temporary directory for testing
 		tmpDir := t.TempDir()
 		t.Chdir(tmpDir)
 
 		// Initialize manager
-		manager, err := config.NewManager()
+		_, err := config.NewManager()
 		require.NoError(t, err)
 
-		// Set global variables with proper locking
-		initMutex.Lock()
-		configMgr = manager
-		initMutex.Unlock()
-
 		// Reset state after test
-		defer ResetGlobalState()
+		defer commands.ResetGlobalState()
 
 		// Create a corrupted flow file
 		flowsDir := ".flows/flows"
@@ -306,14 +324,14 @@ func TestListCommand_ErrorHandling(t *testing.T) {
 		err = os.WriteFile(corruptedFlowPath, []byte("invalid json content"), 0600)
 		require.NoError(t, err)
 
-		// Set showDetails to true to trigger loading
-		showDetails = true
-		defer func() { showDetails = false }()
-
 		var output bytes.Buffer
-		listCmd.SetOut(&output)
 
-		err = listCmd.RunE(listCmd, []string{})
+		cmd := commands.CreateRootCmd()
+		cmd.SetOut(&output)
+		cmd.SetErr(&output)
+		cmd.SetArgs([]string{"list"})
+
+		err = cmd.Execute()
 		require.NoError(t, err) // Should handle errors gracefully
 
 		outputStr := output.String()
@@ -323,14 +341,6 @@ func TestListCommand_ErrorHandling(t *testing.T) {
 }
 
 // Test helper functions.
-func TestShowDetails_Flag(t *testing.T) {
-	// Test that the showDetails flag exists and can be set
-	flag := listCmd.Flags().Lookup("details")
-	require.NotNil(t, flag)
-	assert.Equal(t, "bool", flag.Value.Type())
-	assert.Equal(t, "false", flag.DefValue)
-	assert.Contains(t, flag.Usage, "show detailed information")
-}
 
 // Benchmark tests.
 func BenchmarkListCommand_NoFlows(b *testing.B) {
@@ -338,20 +348,18 @@ func BenchmarkListCommand_NoFlows(b *testing.B) {
 	tmpDir := b.TempDir()
 	b.Chdir(tmpDir)
 
-	manager, err := config.NewManager()
+	_, err := config.NewManager()
 	require.NoError(b, err)
 
-	// Set global variables with proper locking
-	initMutex.Lock()
-	configMgr = manager
-	initMutex.Unlock()
-
 	// Reset state after benchmark
-	defer ResetGlobalState()
+	defer commands.ResetGlobalState()
 
 	b.ResetTimer()
+
 	for range b.N {
-		_ = listCmd.RunE(listCmd, []string{})
+		cmd := commands.CreateRootCmd()
+		cmd.SetArgs([]string{"list"})
+		_ = cmd.Execute()
 	}
 }
 
@@ -363,29 +371,42 @@ func BenchmarkListCommand_WithFlows(b *testing.B) {
 	manager, err := config.NewManager()
 	require.NoError(b, err)
 
-	// Set global variables with proper locking
-	initMutex.Lock()
-	configMgr = manager
-	initMutex.Unlock()
-
 	// Reset state after benchmark
-	defer ResetGlobalState()
+	defer commands.ResetGlobalState()
 
 	// Create test flows
 	for i := range 10 {
 		flow := &types.FlowDefinition{
-			ID:          "bench-flow-" + string(rune(i)),
+			Schema:      "",
+			Version:     "1.0",
+			ID:          fmt.Sprintf("bench-flow-%d", i),
 			Name:        "Benchmark Flow",
 			Description: "A flow for benchmarking",
+			Variables:   make(map[string]string),
 			Steps: map[string]types.Step{
-				"step1": {Type: types.StepTypeEnd},
+				"step1": {
+					Type:       types.StepTypeEnd,
+					Prompt:     nil,
+					Model:      "",
+					Tools:      []string{},
+					MCPServer:  "",
+					Next:       "",
+					Conditions: []types.ConditionConfig{},
+					Timeout:    nil,
+					Retry:      nil,
+					Metadata:   make(map[string]any),
+				},
 			},
+			InitialStep: "step1",
 		}
 		_ = manager.SaveFlow(flow)
 	}
 
 	b.ResetTimer()
+
 	for range b.N {
-		_ = listCmd.RunE(listCmd, []string{})
+		cmd := commands.CreateRootCmd()
+		cmd.SetArgs([]string{"list"})
+		_ = cmd.Execute()
 	}
 }

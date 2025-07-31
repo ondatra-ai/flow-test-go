@@ -58,6 +58,7 @@ func addCommentToThread(threadID, comment string) error {
 	}`, threadID, escapedComment)
 
 	cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query)
+
 	output, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("failed to execute GraphQL query: %w", err)
@@ -75,9 +76,11 @@ func addCommentToThread(threadID, comment string) error {
 
 	if len(response.Errors) > 0 {
 		fmt.Fprintln(os.Stderr, "❌ GitHub API errors:")
+
 		for _, err := range response.Errors {
 			fmt.Fprintf(os.Stderr, "  - %s\n", err.Message)
 		}
+
 		return fmt.Errorf("GitHub API returned errors")
 	}
 
@@ -91,6 +94,7 @@ func resolveConversation(conversationID, comment string) error {
 		fmt.Fprintln(os.Stderr, "Usage: go run resolve-pr-conversation.go <conversationId> [comment]")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "If a comment is provided, it will be added to the conversation thread before resolving.")
+
 		return fmt.Errorf("conversationId is required")
 	}
 
@@ -111,6 +115,7 @@ func resolveConversation(conversationID, comment string) error {
 	fmt.Printf("Resolving conversation: %s\n", conversationID)
 
 	cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query)
+
 	output, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("failed to execute GraphQL query: %w", err)
@@ -124,19 +129,24 @@ func resolveConversation(conversationID, comment string) error {
 	if response.Data != nil && response.Data.ResolveReviewThread != nil {
 		thread := response.Data.ResolveReviewThread.Thread
 		fmt.Printf("✅ Successfully resolved conversation %s\n", thread.ID)
+
 		status := "Not resolved"
 		if thread.IsResolved {
 			status = "Resolved"
 		}
+
 		fmt.Printf("Status: %s\n", status)
+
 		return nil
 	}
 
 	if len(response.Errors) > 0 {
 		fmt.Fprintln(os.Stderr, "❌ GitHub API errors:")
+
 		for _, err := range response.Errors {
 			fmt.Fprintf(os.Stderr, "  - %s\n", err.Message)
 		}
+
 		return fmt.Errorf("GitHub API returned errors")
 	}
 
@@ -151,6 +161,7 @@ func main() {
 	}
 
 	conversationID := os.Args[1]
+
 	var comment string
 	if len(os.Args) > 2 {
 		comment = os.Args[2]

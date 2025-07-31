@@ -9,17 +9,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
+// GlobalState holds the global application state.
+type GlobalState struct {
 	configMgr *config.Manager
 	appConfig *config.Config
 	initMutex sync.Mutex
-)
+}
 
-// rootCmd represents the base command when called without any subcommands.
-var rootCmd = &cobra.Command{
-	Use:   "flow-test-go",
-	Short: "A CLI tool for orchestrating AI agents with flows",
-	Long: `flow-test-go is a CLI tool that orchestrates AI agents using LangGraph and OpenRouter.
+// NewGlobalState creates a new GlobalState instance.
+func NewGlobalState() *GlobalState {
+	return &GlobalState{
+		configMgr: nil,
+		appConfig: nil,
+		initMutex: sync.Mutex{},
+	}
+}
+
+// createBaseCommand creates a base cobra.Command with common settings.
+func createBaseCommand(state *GlobalState) *cobra.Command {
+	return &cobra.Command{
+		Use:   "flow-test-go",
+		Short: "A CLI tool for orchestrating AI agents with flows",
+		Long: `flow-test-go is a CLI tool that orchestrates AI agents using LangGraph and OpenRouter.
 
 It supports:
 - Flow-based AI orchestration
@@ -27,34 +38,71 @@ It supports:
 - GitHub API integration
 - Multiple AI provider support via OpenRouter
 - Configuration management`,
-	Version: "1.0.0",
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd: true,
-	},
-	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
-		return initializeConfig()
-	},
+		Version: "1.0.0",
+		CompletionOptions: cobra.CompletionOptions{
+			DisableDefaultCmd:   true,
+			DisableNoDescFlag:   false,
+			DisableDescriptions: false,
+			HiddenDefaultCmd:    false,
+		},
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
+			return initializeConfig(state)
+		},
+		Aliases:                []string{},
+		SuggestFor:             []string{},
+		GroupID:                "",
+		Example:                "",
+		ValidArgs:              []string{},
+		ValidArgsFunction:      nil,
+		Args:                   nil,
+		ArgAliases:             []string{},
+		BashCompletionFunction: "",
+		Deprecated:             "",
+		Annotations:            map[string]string{},
+		PersistentPreRun:       nil,
+		PreRun:                 nil,
+		PreRunE:                nil,
+		Run:                    nil,
+		RunE:                   nil,
+		PostRun:                nil,
+		PostRunE:               nil,
+		PersistentPostRun:      nil,
+		PersistentPostRunE:     nil,
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: false,
+		},
+		TraverseChildren:           false,
+		Hidden:                     false,
+		SilenceErrors:              false,
+		SilenceUsage:               false,
+		DisableFlagParsing:         false,
+		DisableAutoGenTag:          false,
+		DisableFlagsInUseLine:      false,
+		DisableSuggestions:         false,
+		SuggestionsMinimumDistance: 0,
+	}
 }
 
 // initializeConfig initializes the configuration manager and config in a thread-safe manner.
-func initializeConfig() error {
-	initMutex.Lock()
-	defer initMutex.Unlock()
+func initializeConfig(state *GlobalState) error {
+	state.initMutex.Lock()
+	defer state.initMutex.Unlock()
 
 	// Skip if already initialized
-	if configMgr != nil && appConfig != nil {
+	if state.configMgr != nil && state.appConfig != nil {
 		return nil
 	}
 
 	// Initialize config manager
 	var err error
-	configMgr, err = config.NewManager()
+
+	state.configMgr, err = config.NewManager()
 	if err != nil {
 		return fmt.Errorf("failed to initialize config manager: %w", err)
 	}
 
 	// Load configuration
-	appConfig, err = configMgr.LoadConfig()
+	state.appConfig, err = state.configMgr.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
@@ -64,7 +112,10 @@ func initializeConfig() error {
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(state *GlobalState) {
+	// Create and setup the root command with subcommands
+	rootCmd := createRootCommand(state)
+
 	err := rootCmd.Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -72,72 +123,84 @@ func Execute() {
 	}
 }
 
-func init() {
+// createRootCommand creates and configures the root command.
+func createRootCommand(state *GlobalState) *cobra.Command {
+	rootCmd := createBaseCommand(state)
+
 	// Disable help command
-	rootCmd.SetHelpCommand(&cobra.Command{
-		Use:    "no-help",
-		Hidden: true,
-	})
+	rootCmd.SetHelpCommand(createDisabledHelpCommand())
 
 	// Add subcommands
-	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(CreateListCommand(state))
+
+	return rootCmd
 }
 
-// GetConfigManager returns the configuration manager instance.
-func GetConfigManager() *config.Manager {
-	return configMgr
+// createDisabledHelpCommand creates a disabled help command to hide the default help.
+func createDisabledHelpCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:                    "no-help",
+		Hidden:                 true,
+		Aliases:                []string{},
+		SuggestFor:             []string{},
+		Short:                  "",
+		GroupID:                "",
+		Long:                   "",
+		Example:                "",
+		ValidArgs:              []string{},
+		ValidArgsFunction:      nil,
+		Args:                   nil,
+		ArgAliases:             []string{},
+		BashCompletionFunction: "",
+		Deprecated:             "",
+		Annotations:            map[string]string{},
+		Version:                "",
+		PersistentPreRun:       nil,
+		PersistentPreRunE:      nil,
+		PreRun:                 nil,
+		PreRunE:                nil,
+		Run:                    nil,
+		RunE:                   nil,
+		PostRun:                nil,
+		PostRunE:               nil,
+		PersistentPostRun:      nil,
+		PersistentPostRunE:     nil,
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: false,
+		},
+		CompletionOptions: cobra.CompletionOptions{
+			DisableDefaultCmd:   false,
+			DisableNoDescFlag:   false,
+			DisableDescriptions: false,
+			HiddenDefaultCmd:    false,
+		},
+		TraverseChildren:           false,
+		SilenceErrors:              false,
+		SilenceUsage:               false,
+		DisableFlagParsing:         false,
+		DisableAutoGenTag:          false,
+		DisableFlagsInUseLine:      false,
+		DisableSuggestions:         false,
+		SuggestionsMinimumDistance: 0,
+	}
 }
 
-// ResetGlobalState resets global state for testing purposes.
-// This should only be used in tests.
+// ResetGlobalState is a no-op for legacy test compatibility.
+// Deprecated: This is only for legacy test compatibility.
 func ResetGlobalState() {
-	initMutex.Lock()
-	defer initMutex.Unlock()
-	configMgr = nil
-	appConfig = nil
-}
-
-// GetConfig returns the application configuration.
-func GetConfig() *config.Config {
-	return appConfig
+	// No-op since we no longer have global state
 }
 
 // CreateRootCmd creates a new root command instance for testing.
 // This avoids sharing command state between tests.
 func CreateRootCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "flow-test-go",
-		Short: "A CLI tool for orchestrating AI agents with flows",
-		Long: `flow-test-go is a CLI tool that orchestrates AI agents using LangGraph and OpenRouter.
+	// Create a new state instance for testing
+	testState := NewGlobalState()
 
-It provides:
-- Flow definition and execution
-- MCP (Model Context Protocol) server integration
-- AI agent orchestration
-- Configuration management`,
-		Version: "1.0.0",
-		CompletionOptions: cobra.CompletionOptions{
-			DisableDefaultCmd: true,
-		},
-		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
-			return initializeConfig()
-		},
-	}
+	cmd := createBaseCommand(testState)
 
 	// Add subcommands
-	// Create a new instance of listCmd to avoid sharing state
-	newListCmd := &cobra.Command{
-		Use:   "list",
-		Short: "List available flows",
-		Long:  "List all available flows in the current configuration",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return listCmd.RunE(cmd, args)
-		},
-	}
+	cmd.AddCommand(CreateListCommand(testState))
 
-	// Copy flags from original listCmd
-	newListCmd.Flags().BoolP("details", "d", false, "show detailed information about each flow")
-
-	cmd.AddCommand(newListCmd)
 	return cmd
 }

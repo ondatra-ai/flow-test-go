@@ -3,72 +3,91 @@ package commands
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-var showDetails bool
+// CreateListCommand creates and returns the list command.
+func CreateListCommand(state *GlobalState) *cobra.Command {
+	cmd := createBaseListCommand()
+	cmd.RunE = func(cobraCmd *cobra.Command, args []string) error {
+		return listFlows(cobraCmd, args, state)
+	}
 
-// listCmd represents the list command.
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List available flows",
-	Long: `List all available flows in the .flows/flows directory.
-
-Examples:
-  flow-test-go list
-  flow-test-go list --details`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		flows, err := configMgr.ListFlows()
-		if err != nil {
-			return fmt.Errorf("failed to list flows: %w", err)
-		}
-
-		if len(flows) == 0 {
-			cmd.Println("📁 No flows found in .flows/flows directory")
-			cmd.Println("💡 Use 'flow-test-go init' to create example flows")
-
-			return nil
-		}
-
-		cmd.Printf("📋 Found %d flow(s):\n\n", len(flows))
-
-		// Get the details flag value from this command instance
-		details, _ := cmd.Flags().GetBool("details")
-
-		for _, flowID := range flows {
-			if details {
-				// Load flow to get details
-				flow, err := configMgr.LoadFlow(flowID)
-				if err != nil {
-					cmd.Printf("❌ %s (failed to load: %v)\n", flowID, err)
-
-					continue
-				}
-
-				cmd.Printf("📄 %s\n", flow.ID)
-				cmd.Printf("   Name: %s\n", flow.Name)
-				cmd.Printf("   Description: %s\n", flow.Description)
-				cmd.Printf("   Steps: %d\n", len(flow.Steps))
-
-				if len(flow.Variables) > 0 {
-					var vars []string
-					for k := range flow.Variables {
-						vars = append(vars, k)
-					}
-					cmd.Printf("   Variables: %s\n", strings.Join(vars, ", "))
-				}
-				cmd.Println()
-			} else {
-				cmd.Printf("📄 %s\n", flowID)
-			}
-		}
-
-		return nil
-	},
+	return cmd
 }
 
-func init() {
-	listCmd.Flags().BoolVar(&showDetails, "details", false, "show detailed information about each flow")
+// createBaseListCommand creates the base command structure for list.
+func createBaseListCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List available flows",
+		Long: `List all available flows in the .flows/flows directory.
+
+Examples:
+  flow-test-go list`,
+		Aliases:                []string{},
+		SuggestFor:             []string{},
+		GroupID:                "",
+		Example:                "",
+		ValidArgs:              []string{},
+		ValidArgsFunction:      nil,
+		Args:                   nil,
+		ArgAliases:             []string{},
+		BashCompletionFunction: "",
+		Deprecated:             "",
+		Annotations:            map[string]string{},
+		Version:                "",
+		PersistentPreRun:       nil,
+		PersistentPreRunE:      nil,
+		PreRun:                 nil,
+		PreRunE:                nil,
+		Run:                    nil,
+		RunE:                   nil,
+		PostRun:                nil,
+		PostRunE:               nil,
+		PersistentPostRun:      nil,
+		PersistentPostRunE:     nil,
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: false,
+		},
+		CompletionOptions: cobra.CompletionOptions{
+			DisableDefaultCmd:   false,
+			DisableNoDescFlag:   false,
+			DisableDescriptions: false,
+			HiddenDefaultCmd:    false,
+		},
+		TraverseChildren:           false,
+		Hidden:                     false,
+		SilenceErrors:              false,
+		SilenceUsage:               false,
+		DisableFlagParsing:         false,
+		DisableAutoGenTag:          false,
+		DisableFlagsInUseLine:      false,
+		DisableSuggestions:         false,
+		SuggestionsMinimumDistance: 0,
+	}
+}
+
+// listFlows implements the list command logic.
+func listFlows(cmd *cobra.Command, _ []string, state *GlobalState) error {
+	flows, err := state.configMgr.ListFlows()
+	if err != nil {
+		return fmt.Errorf("failed to list flows: %w", err)
+	}
+
+	if len(flows) == 0 {
+		cmd.Println("📁 No flows found in .flows/flows directory")
+		cmd.Println("💡 Use 'flow-test-go init' to create example flows")
+
+		return nil
+	}
+
+	cmd.Printf("📋 Found %d flow(s):\n\n", len(flows))
+
+	for _, flowID := range flows {
+		cmd.Printf("📄 %s\n", flowID)
+	}
+
+	return nil
 }

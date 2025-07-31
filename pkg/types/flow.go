@@ -141,13 +141,15 @@ type ExecutionError struct {
 
 // Validate validates the flow definition.
 func (f *FlowDefinition) Validate() error {
-	if err := f.validateBasicFields(); err != nil {
+	err := f.validateBasicFields()
+	if err != nil {
 		return err
 	}
 
 	// Validate step references
 	for stepID, step := range f.Steps {
-		if err := f.validateStep(stepID, step); err != nil {
+		err := f.validateStep(stepID, step)
+		if err != nil {
 			return err
 		}
 	}
@@ -159,25 +161,34 @@ func (f *FlowDefinition) Validate() error {
 func (f *FlowDefinition) validateBasicFields() error {
 	if f.ID == "" {
 		return &ExecutionError{
-			Code:      "INVALID_FLOW",
-			Message:   "flow ID is required",
-			Timestamp: time.Now(),
+			Code:        "INVALID_FLOW",
+			Message:     "flow ID is required",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
 	if f.Name == "" {
 		return &ExecutionError{
-			Code:      "INVALID_FLOW",
-			Message:   "flow name is required",
-			Timestamp: time.Now(),
+			Code:        "INVALID_FLOW",
+			Message:     "flow name is required",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
 	if len(f.Steps) == 0 {
 		return &ExecutionError{
-			Code:      "INVALID_FLOW",
-			Message:   "flow must have at least one step",
-			Timestamp: time.Now(),
+			Code:        "INVALID_FLOW",
+			Message:     "flow must have at least one step",
+			Details:     nil,
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
@@ -186,11 +197,13 @@ func (f *FlowDefinition) validateBasicFields() error {
 
 // validateStep validates a single step and its references.
 func (f *FlowDefinition) validateStep(stepID string, step Step) error {
-	if err := f.validateStepConfiguration(stepID, step); err != nil {
+	err := f.validateStepConfiguration(stepID, step)
+	if err != nil {
 		return err
 	}
 
-	if err := f.validateStepReferences(stepID, step); err != nil {
+	err = f.validateStepReferences(stepID, step)
+	if err != nil {
 		return err
 	}
 
@@ -201,19 +214,23 @@ func (f *FlowDefinition) validateStep(stepID string, step Step) error {
 func (f *FlowDefinition) validateStepConfiguration(stepID string, step Step) error {
 	if step.Type == StepTypePrompt && step.Prompt == nil {
 		return &ExecutionError{
-			Code:      "INVALID_STEP",
-			Message:   "prompt step must have prompt configuration",
-			Details:   map[string]any{"stepId": stepID},
-			Timestamp: time.Now(),
+			Code:        "INVALID_STEP",
+			Message:     "prompt step must have prompt configuration",
+			Details:     map[string]any{"stepId": stepID},
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
 	if step.Type == StepTypeCondition && len(step.Conditions) == 0 {
 		return &ExecutionError{
-			Code:      "INVALID_STEP",
-			Message:   "condition step must have at least one condition",
-			Details:   map[string]any{"stepId": stepID},
-			Timestamp: time.Now(),
+			Code:        "INVALID_STEP",
+			Message:     "condition step must have at least one condition",
+			Details:     map[string]any{"stepId": stepID},
+			Recoverable: false,
+			Timestamp:   time.Now(),
+			StackTrace:  "",
 		}
 	}
 
@@ -226,10 +243,12 @@ func (f *FlowDefinition) validateStepReferences(stepID string, step Step) error 
 	if step.Next != "" && step.Type != StepTypeEnd {
 		if _, exists := f.Steps[step.Next]; !exists {
 			return &ExecutionError{
-				Code:      "INVALID_REFERENCE",
-				Message:   "step references non-existent next step",
-				Details:   map[string]any{"stepId": stepID, "nextStep": step.Next},
-				Timestamp: time.Now(),
+				Code:        "INVALID_REFERENCE",
+				Message:     "step references non-existent next step",
+				Details:     map[string]any{"stepId": stepID, "nextStep": step.Next},
+				Recoverable: false,
+				Timestamp:   time.Now(),
+				StackTrace:  "",
 			}
 		}
 	}
@@ -239,10 +258,12 @@ func (f *FlowDefinition) validateStepReferences(stepID string, step Step) error 
 		if condition.Next != "" {
 			if _, exists := f.Steps[condition.Next]; !exists {
 				return &ExecutionError{
-					Code:      "INVALID_REFERENCE",
-					Message:   "condition references non-existent step",
-					Details:   map[string]any{"stepId": stepID, "conditionNext": condition.Next},
-					Timestamp: time.Now(),
+					Code:        "INVALID_REFERENCE",
+					Message:     "condition references non-existent step",
+					Details:     map[string]any{"stepId": stepID, "conditionNext": condition.Next},
+					Recoverable: false,
+					Timestamp:   time.Now(),
+					StackTrace:  "",
 				}
 			}
 		}
