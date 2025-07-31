@@ -155,6 +155,7 @@ func getPRComments(prNumber string) {
 		log.Fatalf("Invalid PR number: %s", prNumber)
 	}
 
+	// #nosec G204 - query is constructed internally and not from user input
 	cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query, "-F", fmt.Sprintf("prNumber=%d", prNum))
 
 	output, err := cmd.Output()

@@ -57,6 +57,7 @@ func addCommentToThread(threadID, comment string) error {
 		}
 	}`, threadID, escapedComment)
 
+	// #nosec G204 - query is constructed internally and not from user input
 	cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query)
 
 	output, err := cmd.Output()
@@ -114,6 +115,7 @@ func resolveConversation(conversationID, comment string) error {
 
 	fmt.Printf("Resolving conversation: %s\n", conversationID)
 
+	// #nosec G204 - query is constructed internally and not from user input
 	cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query)
 
 	output, err := cmd.Output()
