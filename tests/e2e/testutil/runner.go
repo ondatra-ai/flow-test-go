@@ -175,12 +175,12 @@ func (r *FlowRunner) setupCoverage() {
 	coverageBase := filepath.Join("coverage", "e2e")
 	r.coverageDir = filepath.Join(coverageBase, testName)
 
-	// Create coverage directory
+	// Create coverage directory with parent directories
 	err := os.MkdirAll(r.coverageDir, 0o755)
 	if err != nil {
-		r.t.Logf("Warning: Could not create coverage directory %s: %v", r.coverageDir, err)
-		r.coverageDir = "" // Disable coverage collection
+		r.t.Fatalf("Failed to create coverage directory %s: %v", r.coverageDir, err)
 	}
+	r.t.Logf("Created coverage directory: %s", r.coverageDir)
 }
 
 // EnsureBinaryExists checks if the test binary exists and builds it if needed
