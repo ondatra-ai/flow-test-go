@@ -13,6 +13,14 @@ import (
 	"time"
 )
 
+// Static errors for better error handling.
+var (
+	ErrInvalidBinaryPath   = errors.New("invalid binary path")
+	ErrBinaryNotFound      = errors.New("binary not found")
+	ErrBinaryIsDirectory   = errors.New("binary path is a directory")
+	ErrBinaryNotExecutable = errors.New("binary is not executable")
+)
+
 const (
 	defaultRunnerTimeout = 30 * time.Second
 	coverageDirMode      = 0o750
@@ -129,47 +137,7 @@ func (r *FlowRunner) Execute() *FlowTestResult {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	// Validate the command before execution
-	if err := validateBinaryPath(cmd.Path); err != nil {
-		return &FlowTestResult{
-			ExitCode: 1,
-			Stderr:   fmt.Sprintf("Binary validation failed: %v", err),
-			Error:    err,
-			Duration: time.Since(start),
-		}
-	}
-
-	// Create command with validated path and sanitized args
-	sanitizedArgs := sanitizeArgs(cmd.Args[1:])
-	cmd = exec.CommandContext(ctx, cmd.Path, sanitizedArgs...)
-	cmd.Stdout = &r.stdout
-	cmd.Stderr = &r.stderr
-
-	cmd.Dir = r.workDir
-	if r.coverageDir != "" {
-		if cmd.Env == nil {
-			cmd.Env = os.Environ()
-		}
-
-		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
-	}
-
-	// Execute command
-	err := cmd.Run()
-
-	// Calculate duration
-	duration := time.Since(start)
-
-	// Determine exit code
-	exitCode := r.determineExitCode(err)
-
-	return &FlowTestResult{
-		ExitCode: exitCode,
-		Stdout:   r.stdout.String(),
-		Stderr:   r.stderr.String(),
-		Error:    err,
-		Duration: duration,
-	}
+	return r.validateAndExecuteCommand(cmd, ctx, start)
 }
 
 // CleanupCoverage removes coverage files for a test (optional cleanup).
@@ -267,35 +235,36 @@ func EnsureBinaryExists(t *testing.T) {
 	}
 }
 
-// validateBinaryPath ensures the binary path is safe to execute
+// validateBinaryPath ensures the binary path is safe to execute.
 func validateBinaryPath(path string) error {
 	// Convert to absolute path to prevent path traversal
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return fmt.Errorf("invalid binary path: %w", err)
+		return fmt.Errorf("%w: %w", ErrInvalidBinaryPath, err)
 	}
 
 	// Check if file exists and is executable
 	info, err := os.Stat(absPath)
 	if err != nil {
-		return fmt.Errorf("binary not found: %w", err)
+		return fmt.Errorf("%w: %w", ErrBinaryNotFound, err)
 	}
 
 	if info.IsDir() {
-		return fmt.Errorf("binary path is a directory: %s", absPath)
+		return fmt.Errorf("%w: %s", ErrBinaryIsDirectory, absPath)
 	}
 
 	// Check file permissions (executable)
 	if info.Mode()&0o111 == 0 {
-		return fmt.Errorf("binary is not executable: %s", absPath)
+		return fmt.Errorf("%w: %s", ErrBinaryNotExecutable, absPath)
 	}
 
 	return nil
 }
 
-// sanitizeArgs removes potentially dangerous arguments
+// sanitizeArgs removes potentially dangerous arguments.
 func sanitizeArgs(args []string) []string {
 	var sanitized []string
+
 	for _, arg := range args {
 		// Remove null bytes and other dangerous characters
 		cleaned := strings.ReplaceAll(arg, "\x00", "")
@@ -306,7 +275,61 @@ func sanitizeArgs(args []string) []string {
 			sanitized = append(sanitized, cleaned)
 		}
 	}
+
 	return sanitized
+}
+
+// validateAndExecuteCommand validates and executes the command safely.
+func (r *FlowRunner) validateAndExecuteCommand(cmd *exec.Cmd, ctx context.Context, start time.Time) *FlowTestResult {
+	// Validate the command before execution
+	err := validateBinaryPath(cmd.Path)
+	if err != nil {
+		return &FlowTestResult{
+			ExitCode: 1,
+			Stdout:   "",
+			Stderr:   fmt.Sprintf("Binary validation failed: %v", err),
+			Error:    err,
+			Duration: time.Since(start),
+		}
+	}
+
+	// Create command with validated path and sanitized args
+	sanitizedArgs := sanitizeArgs(cmd.Args[1:])
+	cmd = exec.CommandContext(ctx, cmd.Path, sanitizedArgs...)
+	cmd.Stdout = &r.stdout
+	cmd.Stderr = &r.stderr
+
+	return r.executeCommand(cmd, start)
+}
+
+// executeCommand runs the command and handles the result.
+func (r *FlowRunner) executeCommand(cmd *exec.Cmd, start time.Time) *FlowTestResult {
+	cmd.Dir = r.workDir
+
+	if r.coverageDir != "" {
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
+
+		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
+	}
+
+	// Execute command
+	err := cmd.Run()
+
+	// Calculate duration
+	duration := time.Since(start)
+
+	// Determine exit code
+	exitCode := r.determineExitCode(err)
+
+	return &FlowTestResult{
+		ExitCode: exitCode,
+		Stdout:   r.stdout.String(),
+		Stderr:   r.stderr.String(),
+		Error:    err,
+		Duration: duration,
+	}
 }
 
 // createCommand creates a command for executing the flow binary.
@@ -314,7 +337,8 @@ func (r *FlowRunner) createCommand() *exec.Cmd {
 	args := []string{r.binaryPath}
 
 	// Validate binary path before use
-	if err := validateBinaryPath(r.binaryPath); err != nil {
+	err := validateBinaryPath(r.binaryPath)
+	if err != nil {
 		r.t.Fatalf("Invalid binary path: %v", err)
 	}
 
@@ -322,6 +346,7 @@ func (r *FlowRunner) createCommand() *exec.Cmd {
 	if r.flowFile != "" {
 		args = append(args, "--file", r.flowFile)
 	}
+
 	if r.configDir != "" {
 		args = append(args, "--config", r.configDir)
 	}

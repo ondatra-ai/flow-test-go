@@ -24,7 +24,7 @@ var (
 	ErrNoCoverageData = errors.New("no coverage data found")
 )
 
-// Static errors for better error handling
+// Static errors for better error handling.
 var (
 	ErrInvalidFilePath        = errors.New("invalid file path")
 	ErrNullBytesInPath        = errors.New("file path contains null bytes")
