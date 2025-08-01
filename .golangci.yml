@@ -119,7 +119,7 @@ linters:
     wsl_v5:
       allow-first-in-block: true
       allow-whole-block: false
-      branch-max-lines: 2 
+      branch-max-lines: 2
 
   exclusions:
     generated: lax
@@ -132,6 +132,12 @@ linters:
           - dupl
           - gosec
           - funlen
+      - paths:
+          - tests/e2e/testutil/coverage\.go
+          - tests/e2e/testutil/runner\.go
+        linters:
+          - gosec
+        text: "G204"
       - path: scripts/.*
         linters:
           - revive
@@ -144,5 +150,5 @@ linters:
           - gosec
           - godot
           - gocritic
-          - prealloc 
+          - prealloc
           - perfsprint

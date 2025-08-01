@@ -1,0 +1,25 @@
+{
+  "id": "conditional-flow",
+  "name": "Conditional Flow Test",
+  "description": "Flow with conditional branching for testing condition evaluation",
+  "initialStep": "check-condition",
+  "steps": {
+    "check-condition": {
+      "type": "condition",
+      "conditions": [
+        { "expression": "true", "next": "true-branch" },
+        { "expression": "false", "next": "false-branch" }
+      ]
+    },
+    "true-branch": {
+      "type": "prompt",
+      "prompt": "Condition was true - taking positive path",
+      "next": null
+    },
+    "false-branch": {
+      "type": "prompt",
+      "prompt": "Condition was false - taking negative path",
+      "next": null
+    }
+  }
+}

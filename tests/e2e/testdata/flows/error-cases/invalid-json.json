@@ -1,0 +1,12 @@
+{
+  "id": "invalid-json",
+  "name": "Invalid JSON Test"
+  "description": "This JSON is missing a comma after name field",
+  "initialStep": "step1",
+  "steps": {
+    "step1": {
+      "type": "prompt",
+      "prompt": "This should fail JSON parsing"
+    }
+  }
+}

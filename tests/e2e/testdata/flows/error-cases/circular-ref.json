@@ -1,0 +1,18 @@
+{
+  "id": "circular-ref",
+  "name": "Circular Reference Test",
+  "description": "Flow with circular step references that should be detected as invalid",
+  "initialStep": "step1",
+  "steps": {
+    "step1": {
+      "type": "prompt",
+      "prompt": "First step that points to step2",
+      "next": "step2"
+    },
+    "step2": {
+      "type": "prompt",
+      "prompt": "Second step that points back to step1 - creates circular reference",
+      "next": "step1"
+    }
+  }
+}

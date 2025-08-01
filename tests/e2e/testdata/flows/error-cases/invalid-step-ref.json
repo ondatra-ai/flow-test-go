@@ -1,0 +1,20 @@
+{
+  "id": "invalid-step-ref",
+  "name": "Invalid Step Reference Test",
+  "description": "Flow with references to non-existent steps",
+  "initialStep": "step1",
+  "steps": {
+    "step1": {
+      "type": "prompt",
+      "prompt": "This step references a non-existent step",
+      "next": "nonexistent-step"
+    },
+    "step2": {
+      "type": "condition",
+      "conditions": [
+        { "expression": "true", "next": "missing-yes-step" },
+        { "expression": "false", "next": "missing-no-step" }
+      ]
+    }
+  }
+}
