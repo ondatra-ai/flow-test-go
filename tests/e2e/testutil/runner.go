@@ -112,32 +112,23 @@ func (r *FlowRunner) Execute() *FlowTestResult {
 	// Setup coverage collection
 	r.setupCoverage()
 
-	// Build command
-	cmd := r.buildCommand()
-
-	// Setup output capture
-	cmd.Stdout = &r.stdout
-	cmd.Stderr = &r.stderr
-
-	// Setup working directory if specified
-	if r.workDir != "" {
-		cmd.Dir = r.workDir
-	}
-
-	// Setup coverage environment
-	if r.coverageDir != "" {
-		if cmd.Env == nil {
-			cmd.Env = os.Environ()
-		}
-
-		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
-	}
-
 	// Create context with timeout for command execution
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return r.validateAndExecuteCommand(cmd, ctx, start)
+	// Create and configure command with all setup in one place
+	cmd, err := r.createAndConfigureCommand(ctx)
+	if err != nil {
+		return &FlowTestResult{
+			ExitCode: 1,
+			Stdout:   "",
+			Stderr:   fmt.Sprintf("Command setup failed: %v", err),
+			Error:    err,
+			Duration: time.Since(start),
+		}
+	}
+
+	return r.executeCommand(cmd, start)
 }
 
 // CleanupCoverage removes coverage files for a test (optional cleanup).
@@ -165,12 +156,6 @@ func (r *FlowRunner) determineExitCode(err error) int {
 	}
 
 	return exitCode
-}
-
-// buildCommand constructs the command to execute.
-func (r *FlowRunner) buildCommand() *exec.Cmd {
-	// Use the secure createCommand method
-	return r.createCommand()
 }
 
 // setupCoverage creates a unique coverage directory for this test.
@@ -279,41 +264,54 @@ func sanitizeArgs(args []string) []string {
 	return sanitized
 }
 
-// validateAndExecuteCommand validates and executes the command safely.
-func (r *FlowRunner) validateAndExecuteCommand(cmd *exec.Cmd, ctx context.Context, start time.Time) *FlowTestResult {
-	// Validate the command before execution
-	err := validateBinaryPath(cmd.Path)
-	if err != nil {
-		return &FlowTestResult{
-			ExitCode: 1,
-			Stdout:   "",
-			Stderr:   fmt.Sprintf("Binary validation failed: %v", err),
-			Error:    err,
-			Duration: time.Since(start),
-		}
+// createAndConfigureCommand creates a fully configured command ready for execution.
+func (r *FlowRunner) createAndConfigureCommand(ctx context.Context) (*exec.Cmd, error) {
+	// Validate binary path before use
+	if err := validateBinaryPath(r.binaryPath); err != nil {
+		return nil, fmt.Errorf("invalid binary path: %w", err)
 	}
 
-	// Create command with validated path and sanitized args
-	sanitizedArgs := sanitizeArgs(cmd.Args[1:])
-	cmd = exec.CommandContext(ctx, cmd.Path, sanitizedArgs...)
+	// Build arguments
+	args := []string{}
+	if r.flowFile != "" {
+		args = append(args, "--file", r.flowFile)
+	}
+	if r.configDir != "" {
+		args = append(args, "--config", r.configDir)
+	}
+
+	// For now, use 'list' command as a placeholder
+	// since the 'run' command doesn't exist yet
+	args = append(args, "list")
+
+	// Sanitize arguments to prevent command injection
+	sanitizedArgs := sanitizeArgs(args)
+
+	// Create command with context
+	cmd := exec.CommandContext(ctx, r.binaryPath, sanitizedArgs...)
+
+	// Configure all command properties in one place
 	cmd.Stdout = &r.stdout
 	cmd.Stderr = &r.stderr
 
-	return r.executeCommand(cmd, start)
-}
+	// Setup working directory if specified
+	if r.workDir != "" {
+		cmd.Dir = r.workDir
+	}
 
-// executeCommand runs the command and handles the result.
-func (r *FlowRunner) executeCommand(cmd *exec.Cmd, start time.Time) *FlowTestResult {
-	cmd.Dir = r.workDir
-
+	// Setup coverage environment
 	if r.coverageDir != "" {
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
-
 		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
 	}
 
+	return cmd, nil
+}
+
+// executeCommand runs the command and handles the result.
+func (r *FlowRunner) executeCommand(cmd *exec.Cmd, start time.Time) *FlowTestResult {
 	// Execute command
 	err := cmd.Run()
 
@@ -330,39 +328,4 @@ func (r *FlowRunner) executeCommand(cmd *exec.Cmd, start time.Time) *FlowTestRes
 		Error:    err,
 		Duration: duration,
 	}
-}
-
-// createCommand creates a command for executing the flow binary.
-func (r *FlowRunner) createCommand() *exec.Cmd {
-	args := []string{r.binaryPath}
-
-	// Validate binary path before use
-	err := validateBinaryPath(r.binaryPath)
-	if err != nil {
-		r.t.Fatalf("Invalid binary path: %v", err)
-	}
-
-	// Add arguments to execute a flow
-	if r.flowFile != "" {
-		args = append(args, "--file", r.flowFile)
-	}
-
-	if r.configDir != "" {
-		args = append(args, "--config", r.configDir)
-	}
-
-	// For now, use 'list' command as a placeholder
-	// since the 'run' command doesn't exist yet
-	args = append(args, "list")
-
-	// Note: flow file and config dir parameters are not supported by list command
-	// This is a limitation of the current implementation
-
-	// Sanitize arguments to prevent command injection
-	sanitizedArgs := sanitizeArgs(args[1:])
-
-	// Create command with validated binary and sanitized args
-	cmd := exec.CommandContext(context.Background(), args[0], sanitizedArgs...)
-
-	return cmd
 }
