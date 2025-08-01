@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/peterovchinnikov/flow-test-go/cmd/commands"
+	"github.com/ondatra-ai/flow-test-go/cmd/commands"
 )
 
 func TestCreateListCommand(t *testing.T) {

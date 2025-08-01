@@ -5,8 +5,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/peterovchinnikov/flow-test-go/internal/config"
 	"github.com/spf13/cobra"
+
+	"github.com/ondatra-ai/flow-test-go/internal/config"
 )
 
 // GlobalState holds the global application state.

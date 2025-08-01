@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/peterovchinnikov/flow-test-go/internal/config"
-	"github.com/peterovchinnikov/flow-test-go/pkg/types"
+	"github.com/ondatra-ai/flow-test-go/internal/config"
+	"github.com/ondatra-ai/flow-test-go/pkg/types"
 )
 
 func TestNewManager(t *testing.T) {

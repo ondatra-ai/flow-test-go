@@ -2,7 +2,7 @@
 package main
 
 import (
-	"github.com/peterovchinnikov/flow-test-go/cmd/commands"
+	"github.com/ondatra-ai/flow-test-go/cmd/commands"
 )
 
 func main() {

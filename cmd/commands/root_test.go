@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/peterovchinnikov/flow-test-go/cmd/commands"
+	"github.com/ondatra-ai/flow-test-go/cmd/commands"
 )
 
 func TestNewGlobalState(t *testing.T) {
