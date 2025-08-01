@@ -2,12 +2,15 @@ package commands_test
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/peterovchinnikov/flow-test-go/cmd/commands"
 )
@@ -44,7 +47,7 @@ func TestExecute_Help(t *testing.T) {
 	}
 
 	// Run the test as a subprocess
-	cmd := exec.Command(os.Args[0], "-test.run=TestExecute_Help")
+	cmd := exec.CommandContext(context.Background(), os.Args[0], "-test.run=TestExecute_Help")
 	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
 
 	var stdout, stderr bytes.Buffer
@@ -55,10 +58,11 @@ func TestExecute_Help(t *testing.T) {
 	err := cmd.Run()
 
 	// Help command should exit with code 0
-	if exitError, ok := err.(*exec.ExitError); ok {
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
 		assert.Equal(t, 0, exitError.ExitCode())
 	} else {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Should contain help text
@@ -79,7 +83,7 @@ func TestExecute_InvalidCommand(t *testing.T) {
 	}
 
 	// Run the test as a subprocess
-	cmd := exec.Command(os.Args[0], "-test.run=TestExecute_InvalidCommand")
+	cmd := exec.CommandContext(context.Background(), os.Args[0], "-test.run=TestExecute_InvalidCommand")
 	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
 
 	var stdout, stderr bytes.Buffer
@@ -90,7 +94,8 @@ func TestExecute_InvalidCommand(t *testing.T) {
 	err := cmd.Run()
 
 	// Invalid command should exit with non-zero code
-	if exitError, ok := err.(*exec.ExitError); ok {
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
 		assert.NotEqual(t, 0, exitError.ExitCode())
 	} else {
 		// If no error, check that stderr contains error message
@@ -109,7 +114,7 @@ func TestExecute_Version(t *testing.T) {
 		return
 	}
 
-	cmd := exec.Command(os.Args[0], "-test.run=TestExecute_Version")
+	cmd := exec.CommandContext(context.Background(), os.Args[0], "-test.run=TestExecute_Version")
 	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
 
 	var stdout, stderr bytes.Buffer
@@ -120,10 +125,11 @@ func TestExecute_Version(t *testing.T) {
 	err := cmd.Run()
 
 	// Version command should exit with code 0
-	if exitError, ok := err.(*exec.ExitError); ok {
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
 		assert.Equal(t, 0, exitError.ExitCode())
 	} else {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Should contain version

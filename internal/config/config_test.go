@@ -1,3 +1,4 @@
+//nolint:exhaustruct // Test files don't need to initialize all struct fields
 package config_test
 
 import (
@@ -337,14 +338,23 @@ func TestManager_SaveMCPServer_InvalidName(t *testing.T) {
 
 	// Create server config with invalid name
 	serverConfig := &types.MCPServerConfig{
-		Name:          "test/invalid", // Contains path separator
-		Command:       "python",
-		TransportType: types.TransportStdio,
+		Name:             "test/invalid", // Contains path separator
+		Command:          "python",
+		Args:             []string{},
+		Env:              make(map[string]string),
+		TransportType:    types.TransportStdio,
+		TransportOptions: make(map[string]any),
+		Capabilities:     types.MCPCapabilities{Tools: true},
+		Timeout:          0,
+		HealthCheck:      nil,
+		AutoRestart:      false,
+		MaxRestarts:      0,
+		Metadata:         make(map[string]any),
 	}
 
 	// Test invalid server name
 	err = manager.SaveMCPServer(serverConfig)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid server name")
 }
 
@@ -358,14 +368,23 @@ func TestManager_SaveMCPServer_ValidationError(t *testing.T) {
 
 	// Create server config that will fail validation (empty name)
 	serverConfig := &types.MCPServerConfig{
-		Name:          "", // Empty name should fail validation
-		Command:       "python",
-		TransportType: types.TransportStdio,
+		Name:             "", // Empty name should fail validation
+		Command:          "python",
+		Args:             []string{},
+		Env:              make(map[string]string),
+		TransportType:    types.TransportStdio,
+		TransportOptions: make(map[string]any),
+		Capabilities:     types.MCPCapabilities{Tools: true},
+		Timeout:          0,
+		HealthCheck:      nil,
+		AutoRestart:      false,
+		MaxRestarts:      0,
+		Metadata:         make(map[string]any),
 	}
 
 	// Test validation error
 	err = manager.SaveMCPServer(serverConfig)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "server config validation failed")
 }
 
@@ -383,7 +402,7 @@ func TestManager_ValidateForExecution(t *testing.T) {
 	configWithKey.LLM.APIKey = "test-api-key"
 
 	err = manager.ValidateForExecution(configWithKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test with missing OpenRouter API key
 	configNoKey := &config.Config{}
@@ -391,7 +410,7 @@ func TestManager_ValidateForExecution(t *testing.T) {
 	configNoKey.LLM.APIKey = "" // Missing API key
 
 	err = manager.ValidateForExecution(configNoKey)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "OpenRouter API key is required")
 
 	// Test with different provider (should not require API key)
@@ -413,22 +432,42 @@ func TestManager_LoadMCPServers(t *testing.T) {
 
 	// Create test server configs
 	server1 := &types.MCPServerConfig{
-		Name:          "server1",
-		Command:       "python",
-		Args:          []string{"-m", "server1"},
-		TransportType: types.TransportStdio,
+		Name:             "server1",
+		Command:          "python",
+		Args:             []string{"-m", "server1"},
+		Env:              make(map[string]string),
+		TransportType:    types.TransportStdio,
+		TransportOptions: make(map[string]any),
 		Capabilities: types.MCPCapabilities{
-			Tools: true,
+			Tools:     true,
+			Resources: false,
+			Prompts:   false,
+			Logging:   false,
 		},
+		Timeout:     0,
+		HealthCheck: nil,
+		AutoRestart: false,
+		MaxRestarts: 0,
+		Metadata:    make(map[string]any),
 	}
 	server2 := &types.MCPServerConfig{
-		Name:          "server2",
-		Command:       "node",
-		Args:          []string{"server2.js"},
-		TransportType: types.TransportStdio,
+		Name:             "server2",
+		Command:          "node",
+		Args:             []string{"server2.js"},
+		Env:              make(map[string]string),
+		TransportType:    types.TransportStdio,
+		TransportOptions: make(map[string]any),
 		Capabilities: types.MCPCapabilities{
+			Tools:     false,
 			Resources: true,
+			Prompts:   false,
+			Logging:   false,
 		},
+		Timeout:     0,
+		HealthCheck: nil,
+		AutoRestart: false,
+		MaxRestarts: 0,
+		Metadata:    make(map[string]any),
 	}
 
 	// Save test servers
@@ -476,7 +515,7 @@ func TestManager_LoadMCPServers_CorruptedJSON(t *testing.T) {
 
 	// Test loading with corrupted file
 	servers, err := manager.LoadMCPServers()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, servers)
 	assert.Contains(t, err.Error(), "failed to parse server config")
 }
