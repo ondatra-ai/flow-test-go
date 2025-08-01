@@ -1,4 +1,4 @@
-module github.com/peterovchinnikov/flow-test-go
+module github.com/ondatra-ai/flow-test-go
 
 go 1.24.5
 

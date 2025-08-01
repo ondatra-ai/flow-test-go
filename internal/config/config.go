@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/peterovchinnikov/flow-test-go/pkg/types"
 	"github.com/spf13/viper"
+
+	"github.com/ondatra-ai/flow-test-go/pkg/types"
 )
 
 var (
@@ -84,7 +85,7 @@ func NewManager() (*Manager, error) {
 	configDir := ".flows"
 
 	// Create config directories (MkdirAll is idempotent and handles concurrent creation)
-	const dirPerms = 0750
+	const dirPerms = 0o750
 
 	err := os.MkdirAll(configDir, dirPerms)
 	if err != nil {
@@ -275,7 +276,7 @@ func (cm *Manager) SaveFlow(flow *types.FlowDefinition) error {
 
 	flowPath := filepath.Join(cm.flowsDir, flow.ID+".json")
 
-	const filePerms = 0600
+	const filePerms = 0o600
 
 	err = os.WriteFile(flowPath, data, filePerms)
 	if err != nil {
@@ -302,7 +303,7 @@ func (cm *Manager) SaveMCPServer(server *types.MCPServerConfig) error {
 		return fmt.Errorf("failed to marshal server config: %w", err)
 	}
 
-	const filePerms = 0600
+	const filePerms = 0o600
 
 	serverPath := filepath.Join(cm.serversDir, server.Name+".json")
 

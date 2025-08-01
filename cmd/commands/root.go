@@ -5,8 +5,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/peterovchinnikov/flow-test-go/internal/config"
 	"github.com/spf13/cobra"
+
+	"github.com/ondatra-ai/flow-test-go/internal/config"
 )
 
 // GlobalState holds the global application state.
@@ -34,7 +35,7 @@ func createBaseCommand(state *GlobalState) *cobra.Command {
 
 It supports:
 - Flow-based AI orchestration
-- MCP (Model Context Protocol) server integration  
+- MCP (Model Context Protocol) server integration
 - GitHub API integration
 - Multiple AI provider support via OpenRouter
 - Configuration management`,
