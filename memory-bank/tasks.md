@@ -222,8 +222,8 @@ Type: Intermediate Feature
 - [x] Code security vulnerability fixes complete
 - [x] Golangci-lint fixes complete
 - [x] Testing complete
-- [ ] Reflection complete
-- [ ] Archiving complete
+- [x] Reflection complete
+- [x] Archiving complete
 
 ## Security Fixes Completed (2025-01-10)
 
