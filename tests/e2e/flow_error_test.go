@@ -28,7 +28,7 @@ func TestInvalidJSONFlow(t *testing.T) {
 	duration := time.Since(start)
 
 	// Note: Currently the application doesn't validate flows, so these tests pass with exit code 0
-	// TODO: Update when flow validation is implemented
+	// When flow validation is implemented, this test should verify proper error handling
 	// For now, just verify the test framework works correctly
 	if result.ExitCode == 0 {
 		t.Skip("Skipping error validation test - application doesn't validate flows yet")
@@ -63,7 +63,7 @@ func TestMissingInitialStepFlow(t *testing.T) {
 	duration := time.Since(start)
 
 	// Note: Currently the application doesn't validate flows, so these tests pass with exit code 0
-	// TODO: Update when flow validation is implemented
+	// When flow validation is implemented, this test should verify proper error handling
 	if result.ExitCode == 0 {
 		t.Skip("Skipping error validation test - application doesn't validate flows yet")
 	} else {
@@ -73,12 +73,15 @@ func TestMissingInitialStepFlow(t *testing.T) {
 	// Should contain validation error
 	expectedErrors := []string{"initial", "step", "missing", "required"}
 	foundError := false
+
 	for _, expectedError := range expectedErrors {
 		if contains(result.Stderr, expectedError) {
 			foundError = true
+
 			break
 		}
 	}
+
 	assert.True(t, foundError, "Should mention missing initialStep error")
 
 	// Record coverage data
@@ -105,7 +108,7 @@ func TestInvalidStepReferenceFlow(t *testing.T) {
 	duration := time.Since(start)
 
 	// Note: Currently the application doesn't validate flows, so these tests pass with exit code 0
-	// TODO: Update when flow validation is implemented
+	// When flow validation is implemented, this test should verify proper error handling
 	if result.ExitCode == 0 {
 		t.Skip("Skipping error validation test - application doesn't validate flows yet")
 	} else {
@@ -115,12 +118,15 @@ func TestInvalidStepReferenceFlow(t *testing.T) {
 	// Should contain reference error
 	expectedErrors := []string{"reference", "step", "not found", "invalid", "missing"}
 	foundError := false
+
 	for _, expectedError := range expectedErrors {
 		if contains(result.Stderr, expectedError) {
 			foundError = true
+
 			break
 		}
 	}
+
 	assert.True(t, foundError, "Should mention invalid step reference error")
 
 	// Record coverage data
@@ -147,7 +153,7 @@ func TestCircularReferenceFlow(t *testing.T) {
 	duration := time.Since(start)
 
 	// Note: Currently the application doesn't validate flows, so these tests pass with exit code 0
-	// TODO: Update when flow validation is implemented
+	// When flow validation is implemented, this test should verify proper error handling
 	if result.ExitCode == 0 {
 		t.Skip("Skipping error validation test - application doesn't validate flows yet")
 	} else {
@@ -157,12 +163,15 @@ func TestCircularReferenceFlow(t *testing.T) {
 	// Should contain circular reference error
 	expectedErrors := []string{"circular", "cycle", "infinite", "loop"}
 	foundError := false
+
 	for _, expectedError := range expectedErrors {
 		if contains(result.Stderr, expectedError) {
 			foundError = true
+
 			break
 		}
 	}
+
 	assert.True(t, foundError, "Should mention circular reference error")
 
 	// Record coverage data
@@ -189,7 +198,7 @@ func TestNonExistentFlowFile(t *testing.T) {
 	duration := time.Since(start)
 
 	// Note: Currently the application doesn't validate flows, so these tests pass with exit code 0
-	// TODO: Update when flow validation is implemented
+	// When flow validation is implemented, this test should verify proper error handling
 	if result.ExitCode == 0 {
 		t.Skip("Skipping error validation test - application doesn't validate flows yet")
 	} else {
@@ -199,12 +208,15 @@ func TestNonExistentFlowFile(t *testing.T) {
 	// Should contain file not found error
 	expectedErrors := []string{"not found", "no such file", "does not exist", "file"}
 	foundError := false
+
 	for _, expectedError := range expectedErrors {
 		if contains(result.Stderr, expectedError) {
 			foundError = true
+
 			break
 		}
 	}
+
 	assert.True(t, foundError, "Should mention file not found error")
 
 	// Record coverage data
@@ -213,7 +225,7 @@ func TestNonExistentFlowFile(t *testing.T) {
 	t.Logf("Non-existent flow file test completed in %v with exit code %d", duration, result.ExitCode)
 }
 
-// Helper function to check if a string contains a substring (case-insensitive)
+// Helper function to check if a string contains a substring (case-insensitive).
 func contains(s, substr string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
