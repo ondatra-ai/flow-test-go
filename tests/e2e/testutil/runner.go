@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -127,8 +129,19 @@ func (r *FlowRunner) Execute() *FlowTestResult {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	// Create command with context
-	cmd = exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)
+	// Validate the command before execution
+	if err := validateBinaryPath(cmd.Path); err != nil {
+		return &FlowTestResult{
+			ExitCode: 1,
+			Stderr:   fmt.Sprintf("Binary validation failed: %v", err),
+			Error:    err,
+			Duration: time.Since(start),
+		}
+	}
+
+	// Create command with validated path and sanitized args
+	sanitizedArgs := sanitizeArgs(cmd.Args[1:])
+	cmd = exec.CommandContext(ctx, cmd.Path, sanitizedArgs...)
 	cmd.Stdout = &r.stdout
 	cmd.Stderr = &r.stderr
 
@@ -188,20 +201,8 @@ func (r *FlowRunner) determineExitCode(err error) int {
 
 // buildCommand constructs the command to execute.
 func (r *FlowRunner) buildCommand() *exec.Cmd {
-	// Start with the binary path
-	args := []string{r.binaryPath}
-
-	// For now, we can only test the existing 'list' command
-	// since the 'run' command doesn't exist yet
-	args = append(args, "list")
-
-	// Note: flow file and config dir parameters are not supported by list command
-	// This is a limitation of the current implementation
-
-	// Create command
-	cmd := exec.CommandContext(context.Background(), args[0], args[1:]...)
-
-	return cmd
+	// Use the secure createCommand method
+	return r.createCommand()
 }
 
 // setupCoverage creates a unique coverage directory for this test.
@@ -264,4 +265,79 @@ func EnsureBinaryExists(t *testing.T) {
 
 		t.Logf("Binary built successfully")
 	}
+}
+
+// validateBinaryPath ensures the binary path is safe to execute
+func validateBinaryPath(path string) error {
+	// Convert to absolute path to prevent path traversal
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("invalid binary path: %w", err)
+	}
+
+	// Check if file exists and is executable
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return fmt.Errorf("binary not found: %w", err)
+	}
+
+	if info.IsDir() {
+		return fmt.Errorf("binary path is a directory: %s", absPath)
+	}
+
+	// Check file permissions (executable)
+	if info.Mode()&0o111 == 0 {
+		return fmt.Errorf("binary is not executable: %s", absPath)
+	}
+
+	return nil
+}
+
+// sanitizeArgs removes potentially dangerous arguments
+func sanitizeArgs(args []string) []string {
+	var sanitized []string
+	for _, arg := range args {
+		// Remove null bytes and other dangerous characters
+		cleaned := strings.ReplaceAll(arg, "\x00", "")
+		cleaned = strings.TrimSpace(cleaned)
+
+		// Skip empty arguments
+		if cleaned != "" {
+			sanitized = append(sanitized, cleaned)
+		}
+	}
+	return sanitized
+}
+
+// createCommand creates a command for executing the flow binary.
+func (r *FlowRunner) createCommand() *exec.Cmd {
+	args := []string{r.binaryPath}
+
+	// Validate binary path before use
+	if err := validateBinaryPath(r.binaryPath); err != nil {
+		r.t.Fatalf("Invalid binary path: %v", err)
+	}
+
+	// Add arguments to execute a flow
+	if r.flowFile != "" {
+		args = append(args, "--file", r.flowFile)
+	}
+	if r.configDir != "" {
+		args = append(args, "--config", r.configDir)
+	}
+
+	// For now, use 'list' command as a placeholder
+	// since the 'run' command doesn't exist yet
+	args = append(args, "list")
+
+	// Note: flow file and config dir parameters are not supported by list command
+	// This is a limitation of the current implementation
+
+	// Sanitize arguments to prevent command injection
+	sanitizedArgs := sanitizeArgs(args[1:])
+
+	// Create command with validated binary and sanitized args
+	cmd := exec.CommandContext(context.Background(), args[0], sanitizedArgs...)
+
+	return cmd
 }

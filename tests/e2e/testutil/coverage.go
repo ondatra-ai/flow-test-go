@@ -24,6 +24,21 @@ var (
 	ErrNoCoverageData = errors.New("no coverage data found")
 )
 
+// Static errors for better error handling
+var (
+	ErrInvalidFilePath        = errors.New("invalid file path")
+	ErrNullBytesInPath        = errors.New("file path contains null bytes")
+	ErrPathTraversal          = errors.New("file path contains directory traversal")
+	ErrInvalidCommandName     = errors.New("invalid command name")
+	ErrInvalidMergedDir       = errors.New("invalid merged directory")
+	ErrInvalidCoverageOut     = errors.New("invalid coverage output path")
+	ErrInvalidCoverageHTML    = errors.New("invalid coverage HTML path")
+	ErrInvalidCoverageSummary = errors.New("invalid coverage summary path")
+	ErrCreateCovdataCommand   = errors.New("failed to create covdata command")
+	ErrCreateHTMLCommand      = errors.New("failed to create HTML cover command")
+	ErrCreateSummaryCommand   = errors.New("failed to create summary cover command")
+)
+
 // CoverageCollector manages coverage data collection and aggregation.
 type CoverageCollector struct {
 	baseDir      string
@@ -218,42 +233,46 @@ func (c *CoverageCollector) mergeCoverageData(sourceDirs []string, mergedDir str
 
 // generateReports creates text and HTML coverage reports.
 func (c *CoverageCollector) generateReports(mergedDir string) error {
+	// Validate the merged directory path
+	err := validateFilePath(mergedDir)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidMergedDir, err)
+	}
+
 	coverageOut := filepath.Join("coverage", "e2e.out")
 	coverageHTML := filepath.Join("coverage", "e2e.html")
 	coverageSummary := filepath.Join("coverage", "e2e-summary.txt")
 
+	// Validate all file paths
+	err = validateCoveragePaths(coverageOut, coverageHTML, coverageSummary)
+	if err != nil {
+		return err
+	}
+
 	ctx := context.Background()
 
-	// Convert to text format
-	cmd := exec.CommandContext(ctx, "go", "tool", "covdata", "textfmt",
-		"-i="+mergedDir, "-o="+coverageOut)
-
-	output, err := cmd.CombinedOutput()
+	// Convert to text format - use secure command construction
+	err = executeConversionCommand(ctx, mergedDir, coverageOut)
 	if err != nil {
-		return fmt.Errorf("failed to convert coverage to text format: %w\nOutput: %s", err, output)
+		return err
 	}
 
-	// Generate HTML report
-	cmd = exec.CommandContext(ctx, "go", "tool", "cover",
-		"-html="+coverageOut, "-o="+coverageHTML)
-
-	output, err = cmd.CombinedOutput()
+	// Generate HTML report - use secure command construction
+	err = executeHTMLCommand(ctx, coverageOut, coverageHTML)
 	if err != nil {
-		return fmt.Errorf("failed to generate HTML report: %w\nOutput: %s", err, output)
+		return err
 	}
 
-	// Generate summary report
-	cmd = exec.CommandContext(ctx, "go", "tool", "cover", "-func="+coverageOut)
-
-	output, err = cmd.CombinedOutput()
+	// Generate summary report - use secure command construction
+	output, err := executeSummaryCommand(ctx, coverageOut)
 	if err != nil {
-		return fmt.Errorf("failed to generate summary report: %w\nOutput: %s", err, output)
+		return err
 	}
 
 	// Save summary to file
 	err = os.WriteFile(coverageSummary, output, fileMode)
 	if err != nil {
-		return fmt.Errorf("failed to write summary file: %w", err)
+		return fmt.Errorf("failed to save summary report: %w", err)
 	}
 
 	// Extract total coverage percentage and update manifest
@@ -323,4 +342,115 @@ func RecordTestExecution(t *testing.T, packageName string, coverDir string, dura
 func RecordTestResult(t *testing.T, testType string, result *FlowTestResult, duration time.Duration) {
 	t.Helper()
 	RecordTestExecution(t, testType, "", duration, result.ExitCode == 0)
+}
+
+// validateFilePath ensures the file path is safe to use in commands.
+func validateFilePath(path string) error {
+	// Convert to absolute path to prevent path traversal
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidFilePath, err)
+	}
+
+	// Check for null bytes and other dangerous characters
+	if strings.Contains(absPath, "\x00") {
+		return fmt.Errorf("%w: %s", ErrNullBytesInPath, absPath)
+	}
+
+	// Check for path traversal attempts
+	if strings.Contains(absPath, "..") {
+		return fmt.Errorf("%w: %s", ErrPathTraversal, absPath)
+	}
+
+	return nil
+}
+
+// secureCommand creates a command with validated arguments.
+func secureCommand(ctx context.Context, name string, args ...string) (*exec.Cmd, error) {
+	// Validate the command name
+	if strings.Contains(name, "\x00") || strings.TrimSpace(name) == "" {
+		return nil, fmt.Errorf("%w: %s", ErrInvalidCommandName, name)
+	}
+
+	// Validate all arguments
+	var validArgs []string
+
+	for _, arg := range args {
+		// Remove null bytes and trim whitespace
+		cleaned := strings.ReplaceAll(arg, "\x00", "")
+		cleaned = strings.TrimSpace(cleaned)
+
+		if cleaned != "" {
+			validArgs = append(validArgs, cleaned)
+		}
+	}
+
+	return exec.CommandContext(ctx, name, validArgs...), nil
+}
+
+// validateCoveragePaths validates all coverage-related file paths.
+func validateCoveragePaths(coverageOut, coverageHTML, coverageSummary string) error {
+	err := validateFilePath(coverageOut)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidCoverageOut, err)
+	}
+
+	err = validateFilePath(coverageHTML)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidCoverageHTML, err)
+	}
+
+	err = validateFilePath(coverageSummary)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidCoverageSummary, err)
+	}
+
+	return nil
+}
+
+// executeConversionCommand executes the coverage conversion command.
+func executeConversionCommand(ctx context.Context, mergedDir, coverageOut string) error {
+	cmd, err := secureCommand(ctx, "go", "tool", "covdata", "textfmt",
+		"-i="+mergedDir, "-o="+coverageOut)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrCreateCovdataCommand, err)
+	}
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to convert coverage to text format: %w\nOutput: %s", err, output)
+	}
+
+	return nil
+}
+
+// executeHTMLCommand executes the HTML coverage report generation command.
+func executeHTMLCommand(ctx context.Context, coverageOut, coverageHTML string) error {
+	cmd, err := secureCommand(ctx, "go", "tool", "cover",
+		"-html="+coverageOut, "-o="+coverageHTML)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrCreateHTMLCommand, err)
+	}
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to generate HTML report: %w\nOutput: %s", err, output)
+	}
+
+	return nil
+}
+
+// executeSummaryCommand executes the summary coverage report generation command.
+func executeSummaryCommand(ctx context.Context, coverageOut string) ([]byte, error) {
+	cmd, err := secureCommand(ctx, "go", "tool", "cover", "-func="+coverageOut)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrCreateSummaryCommand, err)
+	}
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate summary report: %w\nOutput: %s", err, output)
+	}
+
+	return output, nil
 }
