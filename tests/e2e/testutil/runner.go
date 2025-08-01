@@ -3,6 +3,7 @@ package testutil
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -127,7 +128,8 @@ func (r *FlowRunner) Execute() *FlowTestResult {
 	// Determine exit code
 	exitCode := 0
 	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
+		var exitError *exec.ExitError
+		if errors.As(err, &exitError) {
 			exitCode = exitError.ExitCode()
 		} else {
 			// Other error (e.g., binary not found, timeout)
@@ -219,6 +221,8 @@ func EnsureBinaryExists(t *testing.T) {
 // CleanupCoverage removes coverage files for a test (optional cleanup)
 func (r *FlowRunner) CleanupCoverage() {
 	if r.coverageDir != "" {
-		os.RemoveAll(r.coverageDir)
+		if err := os.RemoveAll(r.coverageDir); err != nil {
+			r.t.Logf("Warning: Failed to cleanup coverage directory %s: %v", r.coverageDir, err)
+		}
 	}
 }

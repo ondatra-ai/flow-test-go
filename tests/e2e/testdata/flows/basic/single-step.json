@@ -7,7 +7,7 @@
     "only-step": {
       "type": "prompt",
       "prompt": "This is a test prompt",
-      "nextStep": null
+      "next": null
     }
   }
 }

@@ -2,12 +2,19 @@ package testutil
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+)
+
+// Package-level errors
+var (
+	ErrNoCoverageData = errors.New("no coverage data found")
 )
 
 // CoverageCollector manages coverage data collection and aggregation
@@ -166,8 +173,8 @@ func (c *CoverageCollector) AggregateCoverage() error {
 			if err == nil {
 				for _, entry := range entries {
 					if !entry.IsDir() && (filepath.Ext(entry.Name()) == "" ||
-						contains(entry.Name(), "covcounters") ||
-						contains(entry.Name(), "covmeta")) {
+						strings.Contains(entry.Name(), "covcounters") ||
+						strings.Contains(entry.Name(), "covmeta")) {
 						coverDirs = append(coverDirs, path)
 						break
 					}
@@ -181,7 +188,7 @@ func (c *CoverageCollector) AggregateCoverage() error {
 	}
 
 	if len(coverDirs) == 0 {
-		return fmt.Errorf("no coverage data found")
+		return ErrNoCoverageData
 	}
 
 	// Merge coverage data
@@ -193,13 +200,10 @@ func (c *CoverageCollector) mergeCoverageData(sourceDirs []string, mergedDir str
 	// Build merge command
 	args := []string{"tool", "covdata", "merge"}
 
-	// Add input directories
-	for i, dir := range sourceDirs {
-		if i == 0 {
-			args = append(args, "-i="+dir)
-		} else {
-			args = append(args, ","+dir)
-		}
+	// Add input directories as single comma-separated value
+	if len(sourceDirs) > 0 {
+		inputDirs := "-i=" + strings.Join(sourceDirs, ",")
+		args = append(args, inputDirs)
 	}
 
 	// Add output directory
@@ -260,72 +264,20 @@ func (c *CoverageCollector) generateReports(mergedDir string) error {
 
 // extractCoveragePercentage extracts the total coverage percentage from go tool cover output
 func (c *CoverageCollector) extractCoveragePercentage(output string) string {
-	lines := splitLines(output)
+	lines := strings.Split(output, "\n")
 	for _, line := range lines {
-		if contains(line, "total:") {
+		if strings.Contains(line, "total:") {
 			// Extract percentage (should be at the end of the line)
-			fields := splitFields(line)
+			fields := strings.Fields(line)
 			if len(fields) > 0 {
 				lastField := fields[len(fields)-1]
-				if contains(lastField, "%") {
+				if strings.Contains(lastField, "%") {
 					return lastField
 				}
 			}
 		}
 	}
 	return "0.0%"
-}
-
-// Helper functions for string processing
-func splitLines(s string) []string {
-	if s == "" {
-		return nil
-	}
-
-	lines := make([]string, 0)
-	start := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\n' {
-			if i > start {
-				lines = append(lines, s[start:i])
-			}
-			start = i + 1
-		}
-	}
-	if start < len(s) {
-		lines = append(lines, s[start:])
-	}
-	return lines
-}
-
-func splitFields(s string) []string {
-	if s == "" {
-		return nil
-	}
-
-	fields := make([]string, 0)
-	start := 0
-	inField := false
-
-	for i := 0; i < len(s); i++ {
-		if s[i] == ' ' || s[i] == '\t' {
-			if inField {
-				fields = append(fields, s[start:i])
-				inField = false
-			}
-		} else {
-			if !inField {
-				start = i
-				inField = true
-			}
-		}
-	}
-
-	if inField {
-		fields = append(fields, s[start:])
-	}
-
-	return fields
 }
 
 // RecordTestExecution is a helper function for tests to record their execution
@@ -342,4 +294,9 @@ func RecordTestExecution(t *testing.T, packageName string, coverDir string, dura
 	if err != nil {
 		t.Logf("Warning: Could not save coverage manifest: %v", err)
 	}
+}
+
+// RecordTestResult is a helper function to record test execution with standardized logic
+func RecordTestResult(t *testing.T, testType string, result *FlowTestResult, duration time.Duration) {
+	RecordTestExecution(t, testType, "", duration, result.ExitCode == 0)
 }

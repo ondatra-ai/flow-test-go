@@ -7,13 +7,14 @@
     "step1": {
       "type": "prompt",
       "prompt": "This step references a non-existent step",
-      "nextStep": "nonexistent-step"
+      "next": "nonexistent-step"
     },
     "step2": {
       "type": "condition",
-      "condition": "true",
-      "yes": "missing-yes-step",
-      "no": "missing-no-step"
+      "conditions": [
+        { "expression": "true", "next": "missing-yes-step" },
+        { "expression": "false", "next": "missing-no-step" }
+      ]
     }
   }
 }

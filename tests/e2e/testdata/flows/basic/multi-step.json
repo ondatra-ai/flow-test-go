@@ -7,17 +7,17 @@
     "step1": {
       "type": "prompt",
       "prompt": "First step in the sequence",
-      "nextStep": "step2"
+      "next": "step2"
     },
     "step2": {
       "type": "prompt",
       "prompt": "Second step in the sequence",
-      "nextStep": "step3"
+      "next": "step3"
     },
     "step3": {
       "type": "prompt",
       "prompt": "Final step in the sequence",
-      "nextStep": null
+      "next": null
     }
   }
 }

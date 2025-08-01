@@ -6,7 +6,7 @@
     "step1": {
       "type": "prompt",
       "prompt": "This flow has no initialStep defined",
-      "nextStep": null
+      "next": null
     }
-  }
+}
 }

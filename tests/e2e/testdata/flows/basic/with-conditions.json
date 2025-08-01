@@ -6,19 +6,20 @@
   "steps": {
     "check-condition": {
       "type": "condition",
-      "condition": "true",
-      "yes": "true-branch",
-      "no": "false-branch"
+      "conditions": [
+        { "expression": "true", "next": "true-branch" },
+        { "expression": "false", "next": "false-branch" }
+      ]
     },
     "true-branch": {
       "type": "prompt",
       "prompt": "Condition was true - taking positive path",
-      "nextStep": null
+      "next": null
     },
     "false-branch": {
       "type": "prompt",
       "prompt": "Condition was false - taking negative path",
-      "nextStep": null
+      "next": null
     }
   }
 }
