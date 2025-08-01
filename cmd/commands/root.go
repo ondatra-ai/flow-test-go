@@ -34,7 +34,7 @@ func createBaseCommand(state *GlobalState) *cobra.Command {
 
 It supports:
 - Flow-based AI orchestration
-- MCP (Model Context Protocol) server integration  
+- MCP (Model Context Protocol) server integration
 - GitHub API integration
 - Multiple AI provider support via OpenRouter
 - Configuration management`,

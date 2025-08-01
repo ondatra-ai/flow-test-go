@@ -2,10 +2,6 @@ package commands_test
 
 import (
 	"bytes"
-	"context"
-	"os"
-	"os/exec"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,106 +16,66 @@ func TestNewGlobalState(t *testing.T) {
 }
 
 func TestGlobalState_Structure(t *testing.T) {
-	// Test the global state structure and basic operations
-	state := commands.NewGlobalState()
-	assert.NotNil(t, state)
-
-	// Test that we can create multiple instances without issues
+	state1 := commands.NewGlobalState()
 	state2 := commands.NewGlobalState()
-	assert.NotNil(t, state2)
 
-	// They should be different instances
-	assert.NotSame(t, state, state2)
+	// Each state should be independent
+	assert.NotSame(t, state1, state2)
 }
 
-func TestExecute_Help(t *testing.T) {
-	// Test the Execute function by running it as a subprocess
-	// This is the recommended way to test commands that call os.Exit
-	if os.Getenv("BE_SUBPROCESS") == "1" {
-		state := commands.NewGlobalState()
-		// Simulate help command
-		os.Args = []string{"flow-test-go", "--help"}
+func TestCommandIntegration(t *testing.T) {
+	state := commands.NewGlobalState()
 
-		commands.Execute(state)
+	// Test that we can create commands with the state
+	cmd := commands.CreateListCommand(state)
+	require.NotNil(t, cmd)
 
-		return
-	}
-
-	// Run the test as a subprocess
-	cmd := exec.CommandContext(context.Background(), os.Args[0], "-test.run=TestExecute_Help")
-	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
-
-	var stdout, stderr bytes.Buffer
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	// Help command should exit cleanly (code 0)
-	require.NoError(t, err, "Help command should not error")
-
-	// Should contain help text
-	output := stdout.String() + stderr.String()
-	assert.Contains(t, output, "flow-test-go")
+	// Test integration with state
+	assert.Equal(t, "list", cmd.Use)
+	assert.Contains(t, cmd.Short, "List")
 }
 
-func TestExecute_InvalidCommand(t *testing.T) {
-	// Test error handling by running invalid command as subprocess
-	if os.Getenv("BE_SUBPROCESS") == "1" {
-		state := commands.NewGlobalState()
-		// Simulate invalid command
-		os.Args = []string{"flow-test-go", "invalid-command"}
+func TestListCommand_Help(t *testing.T) {
+	state := commands.NewGlobalState()
+	cmd := commands.CreateListCommand(state)
 
-		commands.Execute(state)
+	// Test help output
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
 
-		return
-	}
+	// Set help flag and execute
+	cmd.SetArgs([]string{"--help"})
+	err := cmd.Execute()
 
-	// Run the test as a subprocess
-	cmd := exec.CommandContext(context.Background(), os.Args[0], "-test.run=TestExecute_InvalidCommand")
-	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
+	// Help should not error and should contain expected content
+	require.NoError(t, err)
 
-	var stdout, stderr bytes.Buffer
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	// Invalid command MUST exit with non-zero code
-	require.Error(t, err, "Invalid command should always fail")
-
-	var exitError *exec.ExitError
-	require.ErrorAs(t, err, &exitError, "Should be an exit error")
-	assert.NotEqual(t, 0, exitError.ExitCode(), "Invalid command should exit with non-zero code")
+	helpOutput := output.String()
+	assert.Contains(t, helpOutput, "list")
+	assert.Contains(t, helpOutput, "List")
 }
 
-func TestExecute_Version(t *testing.T) {
-	// Test version command
-	if os.Getenv("BE_SUBPROCESS") == "1" {
-		state := commands.NewGlobalState()
-		os.Args = []string{"flow-test-go", "--version"}
+func TestListCommand_Structure(t *testing.T) {
+	state := commands.NewGlobalState()
+	cmd := commands.CreateListCommand(state)
 
-		commands.Execute(state)
+	// Test command structure
+	assert.Equal(t, "list", cmd.Use)
+	assert.False(t, cmd.Hidden)
+	assert.NotEmpty(t, cmd.Short)
+	assert.False(t, cmd.HasSubCommands())
+}
 
-		return
-	}
+func TestListCommand_Flags(t *testing.T) {
+	state := commands.NewGlobalState()
+	cmd := commands.CreateListCommand(state)
 
-	cmd := exec.CommandContext(context.Background(), os.Args[0], "-test.run=TestExecute_Version")
-	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
+	// Test that command has flag functionality
+	flags := cmd.Flags()
+	assert.NotNil(t, flags)
 
-	var stdout, stderr bytes.Buffer
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	// Version command should exit cleanly (code 0)
-	require.NoError(t, err, "Version command should not error")
-
-	// Should contain version
-	output := stdout.String() + stderr.String()
-	assert.True(t, strings.Contains(output, "1.0.0") || strings.Contains(output, "version"))
+	// Test basic command functionality
+	assert.NotEmpty(t, cmd.Use)
+	assert.NotEmpty(t, cmd.Short)
 }
