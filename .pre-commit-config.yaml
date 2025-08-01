@@ -39,7 +39,7 @@ repos:
 
       - id: go-imports
         name: go imports
-        entry: goimports -local github.com/peterovchinnikov/flow-test-go -w
+        entry: goimports -local github.com/ondatra-ai/flow-test-go -w
         language: system
         types: [go]
         pass_filenames: true
