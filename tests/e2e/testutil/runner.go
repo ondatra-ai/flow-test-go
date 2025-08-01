@@ -102,10 +102,46 @@ func (r *FlowRunner) Execute() *FlowTestResult {
 	// Setup coverage collection
 	r.setupCoverage()
 
-	// Build and configure command
-	cmd := r.buildAndConfigureCommand()
+	// Build command
+	cmd := r.buildCommand()
 
-	// Execute command with timeout
+	// Setup output capture
+	cmd.Stdout = &r.stdout
+	cmd.Stderr = &r.stderr
+
+	// Setup working directory if specified
+	if r.workDir != "" {
+		cmd.Dir = r.workDir
+	}
+
+	// Setup coverage environment
+	if r.coverageDir != "" {
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
+
+		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
+	}
+
+	// Create context with timeout for command execution
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	// Create command with context
+	cmd = exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)
+	cmd.Stdout = &r.stdout
+	cmd.Stderr = &r.stderr
+
+	cmd.Dir = r.workDir
+	if r.coverageDir != "" {
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
+
+		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
+	}
+
+	// Execute command
 	err := cmd.Run()
 
 	// Calculate duration
@@ -131,51 +167,6 @@ func (r *FlowRunner) CleanupCoverage() {
 			r.t.Logf("Warning: Failed to cleanup coverage directory %s: %v", r.coverageDir, err)
 		}
 	}
-}
-
-// buildAndConfigureCommand creates and configures the command to execute.
-func (r *FlowRunner) buildAndConfigureCommand() *exec.Cmd {
-	// Build command
-	cmd := r.buildCommand()
-
-	// Setup output capture
-	cmd.Stdout = &r.stdout
-	cmd.Stderr = &r.stderr
-
-	// Setup working directory if specified
-	if r.workDir != "" {
-		cmd.Dir = r.workDir
-	}
-
-	// Setup coverage environment
-	if r.coverageDir != "" {
-		if cmd.Env == nil {
-			cmd.Env = os.Environ()
-		}
-
-		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
-	}
-
-	// Create context with timeout and update command
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-
-	if ctx != context.Background() {
-		cmd = exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)
-		cmd.Stdout = &r.stdout
-		cmd.Stderr = &r.stderr
-
-		cmd.Dir = r.workDir
-		if r.coverageDir != "" {
-			if cmd.Env == nil {
-				cmd.Env = os.Environ()
-			}
-
-			cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
-		}
-	}
-
-	return cmd
 }
 
 // determineExitCode extracts exit code from command error.

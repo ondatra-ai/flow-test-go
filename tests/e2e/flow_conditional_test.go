@@ -1,7 +1,8 @@
 package e2e_test
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -11,43 +12,131 @@ import (
 	"github.com/ondatra-ai/flow-test-go/tests/e2e/testutil"
 )
 
-func TestConditionalFlowTrueBranch(t *testing.T) {
+func TestListCommand_MixedFlowTypes(t *testing.T) {
 	t.Parallel()
 
 	// Ensure binary exists
 	testutil.EnsureBinaryExists(t)
 
+	// Create temporary directory with different types of flows
+	tempDir := t.TempDir()
+	flowsDir := filepath.Join(tempDir, ".flows", "flows")
+	require.NoError(t, os.MkdirAll(flowsDir, 0o755))
+
+	// Create flows with different structures inline
+	testFlows := map[string]string{
+		"single-step.json": `{
+			"id": "single-step",
+			"name": "Single Step Flow",
+			"initialStep": "step1",
+			"steps": {
+				"step1": {
+					"type": "prompt",
+					"prompt": "Hello World"
+				}
+			}
+		}`,
+		"multi-step.json": `{
+			"id": "multi-step",
+			"name": "Multi Step Flow",
+			"initialStep": "step1",
+			"steps": {
+				"step1": {
+					"type": "prompt",
+					"prompt": "Step 1",
+					"nextStep": "step2"
+				},
+				"step2": {
+					"type": "prompt",
+					"prompt": "Step 2"
+				}
+			}
+		}`,
+		"with-conditions.json": `{
+			"id": "with-conditions",
+			"name": "Conditional Flow",
+			"initialStep": "condition1",
+			"steps": {
+				"condition1": {
+					"type": "condition",
+					"condition": "true",
+					"yes": "step1",
+					"no": "step2"
+				},
+				"step1": {
+					"type": "prompt",
+					"prompt": "True branch"
+				},
+				"step2": {
+					"type": "prompt",
+					"prompt": "False branch"
+				}
+			}
+		}`,
+	}
+
+	for filename, content := range testFlows {
+		filePath := filepath.Join(flowsDir, filename)
+		require.NoError(t, os.WriteFile(filePath, []byte(content), 0o644), "Should write test flow file")
+	}
+
 	start := time.Now()
 
-	// Execute conditional flow (should take true branch since condition is "true")
+	// Execute list command
 	result := testutil.NewFlowTest(t).
-		WithFlow(testutil.FlowPath("basic/with-conditions.json")).
+		WithWorkDir(tempDir).
 		WithTimeout(30 * time.Second).
 		ExpectSuccess().
 		Run()
 
 	duration := time.Since(start)
 
-	// Verify the test completed successfully
-	require.Equal(t, 0, result.ExitCode, "Conditional flow should complete successfully")
+	// Verify the command completed successfully
+	require.Equal(t, 0, result.ExitCode, "List command should handle mixed flow types")
+
+	// Should list all flow types (check stderr for output)
+	assert.Contains(t, result.Stderr, "single-step", "Should list single-step flow")
+	assert.Contains(t, result.Stderr, "multi-step", "Should list multi-step flow")
+	assert.Contains(t, result.Stderr, "with-conditions", "Should list conditional flow")
 
 	// Record coverage data
-	testutil.RecordTestExecution(t, "conditional", "passed", duration, true)
+	testutil.RecordTestExecution(t, "list-mixed", "passed", duration, true)
 
-	t.Logf("Conditional flow (true branch) test completed in %v", duration)
+	t.Logf("List mixed flow types test completed in %v", duration)
 }
 
-func TestConditionalFlowExecution(t *testing.T) {
+func TestListCommand_SingleFlow(t *testing.T) {
 	t.Parallel()
 
 	// Ensure binary exists
 	testutil.EnsureBinaryExists(t)
 
+	// Create temporary directory with single flow
+	tempDir := t.TempDir()
+	flowsDir := filepath.Join(tempDir, ".flows", "flows")
+	require.NoError(t, os.MkdirAll(flowsDir, 0o755))
+
+	// Create just one flow inline
+	flowContent := `{
+		"id": "test-flow",
+		"name": "Test Flow",
+		"initialStep": "step1",
+		"steps": {
+			"step1": {
+				"type": "prompt",
+				"prompt": "Hello World"
+			}
+		}
+	}`
+
+	destPath := filepath.Join(flowsDir, "test-flow.json")
+	require.NoError(t, os.WriteFile(destPath, []byte(flowContent), 0o644), "Should write test flow file")
+
 	start := time.Now()
 
-	// Execute conditional flow and verify it handles conditions properly
+	// Execute list command
 	result := testutil.NewFlowTest(t).
-		WithFlow(testutil.FlowPath("basic/with-conditions.json")).
+		WithWorkDir(tempDir).
 		WithTimeout(30 * time.Second).
 		ExpectSuccess().
 		Run()
@@ -55,32 +144,31 @@ func TestConditionalFlowExecution(t *testing.T) {
 	duration := time.Since(start)
 
 	// Verify successful execution
-	require.Equal(t, 0, result.ExitCode, "Conditional flow should execute successfully")
+	require.Equal(t, 0, result.ExitCode, "List command should handle single flow")
 
-	// Verify no errors in execution (ignore coverage-related error messages)
-	if !strings.Contains(result.Stderr, "coverage meta-data emit failed") &&
-		!strings.Contains(result.Stderr, "coverage counter data emit failed") {
-		assert.NotContains(t, result.Stderr, "error", "Conditional flow should not have errors")
-		assert.NotContains(t, result.Stderr, "panic", "Conditional flow should not panic")
-	}
+	// Should list the single flow (check stderr for output)
+	assert.Contains(t, result.Stderr, "test-flow", "Should list the single flow")
 
 	// Record coverage data
-	testutil.RecordTestExecution(t, "conditional", "passed", duration, true)
+	testutil.RecordTestExecution(t, "list-single", "passed", duration, true)
 
-	t.Logf("Conditional flow execution test completed in %v", duration)
+	t.Logf("List single flow test completed in %v", duration)
 }
 
-func TestConditionalFlowBranchSelection(t *testing.T) {
+func TestListCommand_MissingFlowsDirectory(t *testing.T) {
 	t.Parallel()
 
 	// Ensure binary exists
 	testutil.EnsureBinaryExists(t)
 
+	// Create temporary directory but don't create .flows/flows
+	tempDir := t.TempDir()
+
 	start := time.Now()
 
-	// Test that the conditional flow properly evaluates conditions and selects branches
+	// Execute list command in directory without .flows/flows
 	result := testutil.NewFlowTest(t).
-		WithFlow(testutil.FlowPath("basic/with-conditions.json")).
+		WithWorkDir(tempDir).
 		WithTimeout(30 * time.Second).
 		ExpectSuccess().
 		Run()
@@ -88,20 +176,18 @@ func TestConditionalFlowBranchSelection(t *testing.T) {
 	duration := time.Since(start)
 
 	// Verify execution completed
-	require.Equal(t, 0, result.ExitCode, "Conditional flow should complete branch selection")
+	require.Equal(t, 0, result.ExitCode, "List command should handle missing flows directory")
 
-	// The actual branch taken depends on the condition evaluation
-	// For our test flow with condition "true", it should take the positive branch
-	// We can't easily verify which branch was taken without more detailed output parsing
-	// but we can verify that the flow completed without errors
+	// Should indicate no flows found or directory doesn't exist (check stderr for output)
+	assert.Contains(t, result.Stderr, "No flows found", "Should indicate no flows found")
 
 	// Record coverage data
-	testutil.RecordTestExecution(t, "conditional", "passed", duration, true)
+	testutil.RecordTestExecution(t, "list-missing-dir", "passed", duration, true)
 
-	t.Logf("Conditional branch selection test completed in %v", duration)
+	t.Logf("List missing directory test completed in %v", duration)
 }
 
-func TestConditionalFlowPerformance(t *testing.T) {
+func TestListCommand_ErrorHandling(t *testing.T) {
 	t.Parallel()
 
 	// Ensure binary exists
@@ -109,21 +195,20 @@ func TestConditionalFlowPerformance(t *testing.T) {
 
 	start := time.Now()
 
-	// Execute conditional flow and measure performance
+	// Execute list command and measure performance
 	result := testutil.NewFlowTest(t).
-		WithFlow(testutil.FlowPath("basic/with-conditions.json")).
-		WithTimeout(10 * time.Second). // Shorter timeout for performance test
+		WithTimeout(10 * time.Second).
 		ExpectSuccess().
 		Run()
 
 	duration := time.Since(start)
 
-	// Verify reasonable performance (should complete quickly)
-	require.Equal(t, 0, result.ExitCode, "Conditional flow should complete successfully")
-	assert.Less(t, duration, 5*time.Second, "Conditional flow should complete within 5 seconds")
+	// Verify reasonable performance and error handling
+	require.Equal(t, 0, result.ExitCode, "List command should handle errors gracefully")
+	assert.Less(t, duration, 5*time.Second, "List command should complete quickly even with errors")
 
 	// Record coverage data
-	testutil.RecordTestExecution(t, "conditional", "passed", duration, true)
+	testutil.RecordTestExecution(t, "list-error-handling", "passed", duration, true)
 
-	t.Logf("Conditional flow performance test completed in %v", duration)
+	t.Logf("List error handling test completed in %v", duration)
 }

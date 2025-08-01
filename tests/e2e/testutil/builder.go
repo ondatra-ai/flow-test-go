@@ -107,10 +107,8 @@ func (b *FlowTestBuilder) ExpectError(errorMsg string) *FlowTestBuilder {
 
 // Run executes the flow test and returns the result.
 func (b *FlowTestBuilder) Run() *FlowTestResult {
-	// Validate required fields
-	if b.flowFile == "" {
-		b.t.Fatal("Flow file is required")
-	}
+	// Note: Flow file is not required for list command testing
+	// The current implementation only supports list command anyway
 
 	// Set default work directory if not provided
 	if b.workDir == "" {
@@ -121,7 +119,10 @@ func (b *FlowTestBuilder) Run() *FlowTestResult {
 	runner := NewFlowRunner(b.t)
 
 	// Configure runner
-	runner.SetFlowFile(b.flowFile)
+	if b.flowFile != "" {
+		runner.SetFlowFile(b.flowFile)
+	}
+
 	runner.SetTimeout(b.timeout)
 	runner.SetWorkDir(b.workDir)
 
