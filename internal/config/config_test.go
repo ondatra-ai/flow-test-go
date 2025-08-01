@@ -320,12 +320,12 @@ func TestManager_SaveMCPServer(t *testing.T) {
 	data, err := os.ReadFile(serverPath)
 	require.NoError(t, err)
 
-	var saved types.MCPServerConfig
+	var unmarshaledConfig types.MCPServerConfig
 
-	err = json.Unmarshal(data, &saved)
+	err = json.Unmarshal(data, &unmarshaledConfig)
 	require.NoError(t, err)
-	assert.Equal(t, serverConfig.Name, saved.Name)
-	assert.Equal(t, serverConfig.Command, saved.Command)
+	assert.Equal(t, serverConfig.Name, unmarshaledConfig.Name)
+	assert.Equal(t, serverConfig.Command, unmarshaledConfig.Command)
 }
 
 func TestManager_SaveMCPServer_InvalidName(t *testing.T) {
@@ -510,7 +510,7 @@ func TestManager_LoadMCPServers_CorruptedJSON(t *testing.T) {
 
 	// Create corrupted JSON file
 	corruptedFile := filepath.Join(".flows", "servers", "corrupted.json")
-	err = os.WriteFile(corruptedFile, []byte("{invalid json"), 0o600)
+	err = os.WriteFile(corruptedFile, []byte(`{"name": "incomplete`), 0o600)
 	require.NoError(t, err)
 
 	// Test loading with corrupted file
