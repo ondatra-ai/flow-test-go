@@ -267,7 +267,8 @@ func sanitizeArgs(args []string) []string {
 // createAndConfigureCommand creates a fully configured command ready for execution.
 func (r *FlowRunner) createAndConfigureCommand(ctx context.Context) (*exec.Cmd, error) {
 	// Validate binary path before use
-	if err := validateBinaryPath(r.binaryPath); err != nil {
+	err := validateBinaryPath(r.binaryPath)
+	if err != nil {
 		return nil, fmt.Errorf("invalid binary path: %w", err)
 	}
 
@@ -276,6 +277,7 @@ func (r *FlowRunner) createAndConfigureCommand(ctx context.Context) (*exec.Cmd, 
 	if r.flowFile != "" {
 		args = append(args, "--file", r.flowFile)
 	}
+
 	if r.configDir != "" {
 		args = append(args, "--config", r.configDir)
 	}
@@ -295,6 +297,7 @@ func (r *FlowRunner) createAndConfigureCommand(ctx context.Context) (*exec.Cmd, 
 	cmd.Stderr = &r.stderr
 
 	// Setup working directory if specified
+
 	if r.workDir != "" {
 		cmd.Dir = r.workDir
 	}
@@ -304,6 +307,7 @@ func (r *FlowRunner) createAndConfigureCommand(ctx context.Context) (*exec.Cmd, 
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
+
 		cmd.Env = append(cmd.Env, "GOCOVERDIR="+r.coverageDir)
 	}
 

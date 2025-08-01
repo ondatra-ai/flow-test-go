@@ -3,7 +3,6 @@ package e2e_test
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,13 +15,7 @@ import (
 func TestListCommand_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
-	// Ensure binary exists
-	testutil.EnsureBinaryExists(t)
-
-	// Create temporary directory with invalid JSON file
-	tempDir := t.TempDir()
-	flowsDir := filepath.Join(tempDir, ".flows", "flows")
-	require.NoError(t, os.MkdirAll(flowsDir, 0o755))
+	exec := testutil.NewTestExecution(t, "list-edge-cases").Start()
 
 	// Create an invalid JSON file
 	invalidJSON := `{
@@ -32,10 +25,10 @@ func TestListCommand_InvalidJSON(t *testing.T) {
 		"invalid": true
 	}`
 
-	invalidPath := filepath.Join(flowsDir, "invalid.json")
-	require.NoError(t, os.WriteFile(invalidPath, []byte(invalidJSON), 0o644))
-
-	start := time.Now()
+	customFlows := map[string]string{
+		"invalid.json": invalidJSON,
+	}
+	tempDir, _ := testutil.SetupTestWithCustomFlows(t, customFlows)
 
 	// Execute list command - should still work even with invalid JSON
 	result := testutil.NewFlowTest(t).
@@ -44,7 +37,7 @@ func TestListCommand_InvalidJSON(t *testing.T) {
 		ExpectSuccess().
 		Run()
 
-	duration := time.Since(start)
+	duration := exec.Complete(result)
 
 	// List command should complete successfully (it doesn't validate JSON content)
 	require.Equal(t, 0, result.ExitCode, "List command should work with invalid JSON files")
@@ -52,22 +45,13 @@ func TestListCommand_InvalidJSON(t *testing.T) {
 	// Should still list the file (even if JSON is invalid)
 	assert.Contains(t, result.Stderr, "invalid", "Should list the file even if JSON is invalid")
 
-	// Record coverage data
-	testutil.RecordTestExecution(t, "list-edge-cases", "passed", duration, true)
-
 	t.Logf("Invalid JSON test completed in %v with exit code %d", duration, result.ExitCode)
 }
 
 func TestListCommand_NonJSONFiles(t *testing.T) {
 	t.Parallel()
 
-	// Ensure binary exists
-	testutil.EnsureBinaryExists(t)
-
-	// Create temporary directory with non-JSON files
-	tempDir := t.TempDir()
-	flowsDir := filepath.Join(tempDir, ".flows", "flows")
-	require.NoError(t, os.MkdirAll(flowsDir, 0o755))
+	exec := testutil.NewTestExecution(t, "list-edge-cases").Start()
 
 	// Create various file types
 	files := map[string]string{
@@ -77,12 +61,7 @@ func TestListCommand_NonJSONFiles(t *testing.T) {
 		"script.sh":       "#!/bin/bash\necho hello",
 	}
 
-	for filename, content := range files {
-		filePath := filepath.Join(flowsDir, filename)
-		require.NoError(t, os.WriteFile(filePath, []byte(content), 0o644))
-	}
-
-	start := time.Now()
+	tempDir, _ := testutil.SetupTestWithCustomFlows(t, files)
 
 	// Execute list command
 	result := testutil.NewFlowTest(t).
@@ -91,16 +70,13 @@ func TestListCommand_NonJSONFiles(t *testing.T) {
 		ExpectSuccess().
 		Run()
 
-	duration := time.Since(start)
+	duration := exec.Complete(result)
 
 	// List command should work with mixed file types
 	require.Equal(t, 0, result.ExitCode, "List command should handle mixed file types")
 
 	// Should list the JSON flow (behavior depends on implementation)
 	assert.Contains(t, result.Stderr, "valid-flow", "Should list JSON flow files")
-
-	// Record coverage data
-	testutil.RecordTestExecution(t, "list-edge-cases", "passed", duration, true)
 
 	t.Logf("Non-JSON files test completed in %v with exit code %d", duration, result.ExitCode)
 }
@@ -113,17 +89,13 @@ func TestListCommand_PermissionDenied(t *testing.T) {
 		t.Skip("Skipping permission test on Windows")
 	}
 
-	// Ensure binary exists
-	testutil.EnsureBinaryExists(t)
+	exec := testutil.NewTestExecution(t, "list-edge-cases").Start()
 
-	// Create temporary directory with restricted permissions
-	tempDir := t.TempDir()
-	flowsDir := filepath.Join(tempDir, ".flows", "flows")
-	require.NoError(t, os.MkdirAll(flowsDir, 0o755))
-
-	// Create a flow file
-	flowPath := filepath.Join(flowsDir, "test-flow.json")
-	require.NoError(t, os.WriteFile(flowPath, []byte(`{"id": "test", "name": "Test"}`), 0o644))
+	// Create temporary directory with a flow file
+	customFlows := map[string]string{
+		"test-flow.json": `{"id": "test", "name": "Test"}`,
+	}
+	tempDir, flowsDir := testutil.SetupTestWithCustomFlows(t, customFlows)
 
 	// Restrict permissions on the flows directory
 	require.NoError(t, os.Chmod(flowsDir, 0o000))
@@ -133,22 +105,15 @@ func TestListCommand_PermissionDenied(t *testing.T) {
 		os.Chmod(flowsDir, 0o755)
 	}()
 
-	start := time.Now()
-
-	// Execute list command
+	// Execute list command - should fail due to permission denied
 	result := testutil.NewFlowTest(t).
 		WithWorkDir(tempDir).
 		WithTimeout(30 * time.Second).
-		Run() // Don't expect success - might fail due to permissions
+		ExpectFailure().
+		ExpectError("failed to read flows directory").
+		Run()
 
-	duration := time.Since(start)
-
-	// The command might fail or succeed depending on implementation
-	// We just verify it doesn't crash
-	t.Logf("Permission test completed with exit code %d", result.ExitCode)
-
-	// Record coverage data - test passes if it doesn't crash
-	testutil.RecordTestExecution(t, "list-edge-cases", "passed", duration, true)
+	duration := exec.Complete(result)
 
 	t.Logf("Permission denied test completed in %v with exit code %d", duration, result.ExitCode)
 }
@@ -156,23 +121,14 @@ func TestListCommand_PermissionDenied(t *testing.T) {
 func TestListCommand_EmptyJSONFile(t *testing.T) {
 	t.Parallel()
 
-	// Ensure binary exists
-	testutil.EnsureBinaryExists(t)
+	exec := testutil.NewTestExecution(t, "list-edge-cases").Start()
 
-	// Create temporary directory with empty JSON file
-	tempDir := t.TempDir()
-	flowsDir := filepath.Join(tempDir, ".flows", "flows")
-	require.NoError(t, os.MkdirAll(flowsDir, 0o755))
-
-	// Create an empty JSON file
-	emptyPath := filepath.Join(flowsDir, "empty.json")
-	require.NoError(t, os.WriteFile(emptyPath, []byte(""), 0o644))
-
-	// Create a valid JSON file for comparison
-	validPath := filepath.Join(flowsDir, "valid.json")
-	require.NoError(t, os.WriteFile(validPath, []byte(`{"id": "valid", "name": "Valid Flow"}`), 0o644))
-
-	start := time.Now()
+	// Create an empty JSON file and a valid one for comparison
+	customFlows := map[string]string{
+		"empty.json": "",
+		"valid.json": `{"id": "valid", "name": "Valid Flow"}`,
+	}
+	tempDir, _ := testutil.SetupTestWithCustomFlows(t, customFlows)
 
 	// Execute list command
 	result := testutil.NewFlowTest(t).
@@ -181,7 +137,7 @@ func TestListCommand_EmptyJSONFile(t *testing.T) {
 		ExpectSuccess().
 		Run()
 
-	duration := time.Since(start)
+	duration := exec.Complete(result)
 
 	// List command should work even with empty files
 	require.Equal(t, 0, result.ExitCode, "List command should handle empty JSON files")
@@ -189,27 +145,24 @@ func TestListCommand_EmptyJSONFile(t *testing.T) {
 	// Should list the valid file at minimum
 	assert.Contains(t, result.Stderr, "valid", "Should list valid JSON flow")
 
-	// Record coverage data
-	testutil.RecordTestExecution(t, "list-edge-cases", "passed", duration, true)
-
 	t.Logf("Empty JSON file test completed in %v with exit code %d", duration, result.ExitCode)
 }
 
 func TestListCommand_LargeNumberOfFlows(t *testing.T) {
 	t.Parallel()
 
-	// Ensure binary exists
-	testutil.EnsureBinaryExists(t)
+	exec := testutil.NewTestExecution(t, "list-edge-cases").Start()
 
-	// Create temporary directory with many flow files
+	// Create temporary directory structure
 	tempDir := t.TempDir()
-	flowsDir := filepath.Join(tempDir, ".flows", "flows")
-	require.NoError(t, os.MkdirAll(flowsDir, 0o755))
+	flowsDir := testutil.CreateFlowsDirectory(t, tempDir)
 
 	// Create multiple flow files
 	numFlows := 50
+	flows := make(map[string]string)
+
 	for flowIndex := range numFlows {
-		flowContent := `{
+		flowContent := fmt.Sprintf(`{
 			"id": "flow-%d",
 			"name": "Flow %d",
 			"initialStep": "step1",
@@ -219,15 +172,13 @@ func TestListCommand_LargeNumberOfFlows(t *testing.T) {
 					"prompt": "Hello from flow %d"
 				}
 			}
-		}`
+		}`, flowIndex, flowIndex, flowIndex)
 
 		filename := fmt.Sprintf("flow-%03d.json", flowIndex)
-		filePath := filepath.Join(flowsDir, filename)
-		content := []byte(fmt.Sprintf(flowContent, flowIndex, flowIndex, flowIndex))
-		require.NoError(t, os.WriteFile(filePath, content, 0o644))
+		flows[filename] = flowContent
 	}
 
-	start := time.Now()
+	testutil.WriteFlowFiles(t, flowsDir, flows)
 
 	// Execute list command
 	result := testutil.NewFlowTest(t).
@@ -236,16 +187,13 @@ func TestListCommand_LargeNumberOfFlows(t *testing.T) {
 		ExpectSuccess().
 		Run()
 
-	duration := time.Since(start)
+	duration := exec.Complete(result)
 
 	// List command should handle many flows
 	require.Equal(t, 0, result.ExitCode, "List command should handle large number of flows")
 
 	// Should complete in reasonable time
 	assert.Less(t, duration, 10*time.Second, "List command should complete quickly even with many flows")
-
-	// Record coverage data
-	testutil.RecordTestExecution(t, "list-edge-cases", "passed", duration, true)
 
 	t.Logf("Large number of flows test completed in %v with exit code %d", duration, result.ExitCode)
 }

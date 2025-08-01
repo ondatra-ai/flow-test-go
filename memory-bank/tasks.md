@@ -221,7 +221,7 @@ Type: Intermediate Feature
 - [x] GitHub pipeline security fixes complete
 - [x] Code security vulnerability fixes complete
 - [x] Golangci-lint fixes complete
-- [ ] Testing complete
+- [x] Testing complete
 - [ ] Reflection complete
 - [ ] Archiving complete
 
@@ -254,6 +254,31 @@ Type: Intermediate Feature
 - [x] Improved code formatting and whitespace consistency
 - [x] Eliminated inline error handling in favor of explicit error checking
 
+### Test Quality Improvements (2025-01-10)
+- [x] Fixed non-deterministic TestListCommand_PermissionDenied test (lines 108-154)
+- [x] Added ExpectFailure() assertion for permission denied scenarios
+- [x] Added ExpectError() assertion for specific error message "failed to read flows directory"
+- [x] Removed conditional logic that accepted both success and failure outcomes
+- [x] Test now deterministically expects failure with specific error message
+- [x] Verified fix works correctly with all error tests passing
+- [x] Eliminated significant code duplication in test setup across multiple files
+- [x] Created shared test utilities in testutil/setup.go:
+  - [x] StandardFlows map with reusable flow content definitions
+  - [x] CreateFlowsDirectory() for standard directory structure setup
+  - [x] WriteFlowFiles() and WriteStandardFlows() for file creation
+  - [x] SetupTestWithFlows() and SetupTestWithCustomFlows() for complete test setup
+  - [x] TestExecutionWrapper for common execution patterns with timing and coverage
+  - [x] CreateSingleFlow() utility for dynamic flow creation
+- [x] Refactored flow_basic_test.go to use shared utilities (eliminated ~80 lines of duplication)
+- [x] Refactored flow_conditional_test.go to use shared utilities (eliminated ~70 lines of duplication)
+- [x] Refactored flow_error_test.go key tests to use shared utilities (eliminated ~60 lines of duplication)
+- [x] Removed redundant testutil.EnsureBinaryExists() calls (handled by TestExecutionWrapper)
+- [x] Removed redundant testutil.RecordTestExecution() calls (handled by TestExecutionWrapper)
+- [x] Removed redundant directory setup code across all test files
+- [x] Verified all e2e tests continue to pass after refactoring (100% test success rate)
+
 **Security Impact**: Eliminated real command injection and path traversal vulnerabilities while maintaining CI/CD pipeline security compliance.
 
 **Quality Impact**: Achieved 100% golangci-lint compliance with improved code maintainability and error handling.
+
+**Test Impact**: Improved test reliability by eliminating non-deterministic behavior and adding clear pass/fail criteria. Eliminated ~210 lines of code duplication across test files through shared utilities, improving maintainability and consistency.
