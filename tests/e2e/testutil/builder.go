@@ -7,7 +7,9 @@ import (
 	"time"
 )
 
-// FlowTestBuilder provides a fluent API for building flow execution tests
+const defaultTestTimeout = 30 * time.Second
+
+// FlowTestBuilder provides a fluent API for building flow execution tests.
 type FlowTestBuilder struct {
 	t           *testing.T
 	flowFile    string
@@ -19,7 +21,7 @@ type FlowTestBuilder struct {
 	expectOut   string
 }
 
-// FlowTestResult contains the results of a flow test execution
+// FlowTestResult contains the results of a flow test execution.
 type FlowTestResult struct {
 	ExitCode int
 	Stdout   string
@@ -28,29 +30,40 @@ type FlowTestResult struct {
 	Duration time.Duration
 }
 
-// NewFlowTest creates a new flow test builder
+// NewFlowTest creates a new flow test builder.
 func NewFlowTest(t *testing.T) *FlowTestBuilder {
+	t.Helper()
+
 	return &FlowTestBuilder{
-		t:       t,
-		timeout: 30 * time.Second, // Default timeout
+		t:           t,
+		flowFile:    "",
+		configDir:   "",
+		workDir:     "",
+		timeout:     defaultTestTimeout, // Default timeout
+		expectExit:  nil,
+		expectError: "",
+		expectOut:   "",
 	}
 }
 
 // WithFlow sets the flow file to execute
 func (b *FlowTestBuilder) WithFlow(flowFile string) *FlowTestBuilder {
 	b.flowFile = flowFile
+
 	return b
 }
 
 // WithConfig sets the config directory for the test
 func (b *FlowTestBuilder) WithConfig(configDir string) *FlowTestBuilder {
 	b.configDir = configDir
+
 	return b
 }
 
 // WithTimeout sets the execution timeout
 func (b *FlowTestBuilder) WithTimeout(timeout time.Duration) *FlowTestBuilder {
 	b.timeout = timeout
+
 	return b
 }
 

@@ -109,28 +109,10 @@ func (c *CoverageCollector) AddTestResult(packageName, testName, coverDir string
 	c.updateSummary()
 }
 
-// updateSummary recalculates the coverage summary
-func (c *CoverageCollector) updateSummary() {
-	c.manifest.Summary.TotalTests = len(c.manifest.Tests)
-	c.manifest.Summary.Passed = 0
-	c.manifest.Summary.Failed = 0
-
-	for _, test := range c.manifest.Tests {
-		if test.Status == "passed" {
-			c.manifest.Summary.Passed++
-		} else {
-			c.manifest.Summary.Failed++
-		}
-	}
-
-	// Update timestamp
-	c.manifest.Timestamp = time.Now().Format(time.RFC3339)
-}
-
 // SaveManifest saves the coverage manifest to disk
 func (c *CoverageCollector) SaveManifest() error {
 	// Ensure directory exists
-	err := os.MkdirAll(filepath.Dir(c.manifestPath), 0o755)
+	err := os.MkdirAll(filepath.Dir(c.manifestPath), 0o750)
 	if err != nil {
 		return fmt.Errorf("failed to create manifest directory: %w", err)
 	}
@@ -142,7 +124,7 @@ func (c *CoverageCollector) SaveManifest() error {
 	}
 
 	// Write to file
-	err = os.WriteFile(c.manifestPath, data, 0o644)
+	err = os.WriteFile(c.manifestPath, data, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to write manifest: %w", err)
 	}
@@ -154,7 +136,7 @@ func (c *CoverageCollector) SaveManifest() error {
 func (c *CoverageCollector) AggregateCoverage() error {
 	// Create merged coverage directory
 	mergedDir := filepath.Join("coverage", "e2e-merged")
-	err := os.MkdirAll(mergedDir, 0o755)
+	err := os.MkdirAll(mergedDir, 0o750)
 	if err != nil {
 		return fmt.Errorf("failed to create merged directory: %w", err)
 	}
@@ -250,7 +232,7 @@ func (c *CoverageCollector) generateReports(mergedDir string) error {
 	}
 
 	// Save summary to file
-	err = os.WriteFile(coverageSummary, output, 0o644)
+	err = os.WriteFile(coverageSummary, output, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to write summary file: %w", err)
 	}
@@ -280,8 +262,27 @@ func (c *CoverageCollector) extractCoveragePercentage(output string) string {
 	return "0.0%"
 }
 
+// updateSummary recalculates the coverage summary
+func (c *CoverageCollector) updateSummary() {
+	c.manifest.Summary.TotalTests = len(c.manifest.Tests)
+	c.manifest.Summary.Passed = 0
+	c.manifest.Summary.Failed = 0
+
+	for _, test := range c.manifest.Tests {
+		if test.Status == "passed" {
+			c.manifest.Summary.Passed++
+		} else {
+			c.manifest.Summary.Failed++
+		}
+	}
+
+	// Update timestamp
+	c.manifest.Timestamp = time.Now().Format(time.RFC3339)
+}
+
 // RecordTestExecution is a helper function for tests to record their execution
 func RecordTestExecution(t *testing.T, packageName string, coverDir string, duration time.Duration, passed bool) {
+	t.Helper()
 	collector := NewCoverageCollector()
 	err := collector.LoadExistingManifest()
 	if err != nil {
@@ -298,5 +299,6 @@ func RecordTestExecution(t *testing.T, packageName string, coverDir string, dura
 
 // RecordTestResult is a helper function to record test execution with standardized logic
 func RecordTestResult(t *testing.T, testType string, result *FlowTestResult, duration time.Duration) {
+	t.Helper()
 	RecordTestExecution(t, testType, "", duration, result.ExitCode == 0)
 }

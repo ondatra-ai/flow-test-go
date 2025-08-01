@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const defaultRunnerTimeout = 30 * time.Second
+
 // FlowRunner handles subprocess execution of flow-test-go binary
 type FlowRunner struct {
 	t           *testing.T
@@ -42,9 +44,13 @@ func NewFlowRunner(t *testing.T) *FlowRunner {
 	binaryPath := filepath.Join(projectRoot, "bin", "flow-test-go-e2e")
 
 	return &FlowRunner{
-		t:          t,
-		timeout:    30 * time.Second,
-		binaryPath: binaryPath, // Use absolute path to coverage-instrumented binary
+		t:           t,
+		flowFile:    "",
+		configDir:   "",
+		workDir:     "",
+		timeout:     defaultRunnerTimeout,
+		binaryPath:  binaryPath, // Use absolute path to coverage-instrumented binary
+		coverageDir: "",
 	}
 }
 
@@ -146,43 +152,6 @@ func (r *FlowRunner) Execute() *FlowTestResult {
 	}
 }
 
-// buildCommand constructs the command to execute
-func (r *FlowRunner) buildCommand() *exec.Cmd {
-	// Start with the binary path
-	args := []string{r.binaryPath}
-
-	// For now, we can only test the existing 'list' command
-	// since the 'run' command doesn't exist yet
-	args = append(args, "list")
-
-	// Note: flow file and config dir parameters are not supported by list command
-	// This is a limitation of the current implementation
-
-	// Create command
-	cmd := exec.Command(args[0], args[1:]...)
-
-	return cmd
-}
-
-// setupCoverage creates a unique coverage directory for this test
-func (r *FlowRunner) setupCoverage() {
-	if r.t == nil {
-		return
-	}
-
-	// Create unique coverage directory for this test
-	testName := r.t.Name()
-	coverageBase := filepath.Join("coverage", "e2e")
-	r.coverageDir = filepath.Join(coverageBase, testName)
-
-	// Create coverage directory with parent directories
-	err := os.MkdirAll(r.coverageDir, 0o755)
-	if err != nil {
-		r.t.Fatalf("Failed to create coverage directory %s: %v", r.coverageDir, err)
-	}
-	r.t.Logf("Created coverage directory: %s", r.coverageDir)
-}
-
 // EnsureBinaryExists checks if the test binary exists and builds it if needed
 func EnsureBinaryExists(t *testing.T) {
 	// Find project root first
@@ -225,4 +194,41 @@ func (r *FlowRunner) CleanupCoverage() {
 			r.t.Logf("Warning: Failed to cleanup coverage directory %s: %v", r.coverageDir, err)
 		}
 	}
+}
+
+// buildCommand constructs the command to execute
+func (r *FlowRunner) buildCommand() *exec.Cmd {
+	// Start with the binary path
+	args := []string{r.binaryPath}
+
+	// For now, we can only test the existing 'list' command
+	// since the 'run' command doesn't exist yet
+	args = append(args, "list")
+
+	// Note: flow file and config dir parameters are not supported by list command
+	// This is a limitation of the current implementation
+
+	// Create command
+	cmd := exec.Command(args[0], args[1:]...)
+
+	return cmd
+}
+
+// setupCoverage creates a unique coverage directory for this test
+func (r *FlowRunner) setupCoverage() {
+	if r.t == nil {
+		return
+	}
+
+	// Create unique coverage directory for this test
+	testName := r.t.Name()
+	coverageBase := filepath.Join("coverage", "e2e")
+	r.coverageDir = filepath.Join(coverageBase, testName)
+
+	// Create coverage directory with parent directories
+	err := os.MkdirAll(r.coverageDir, 0o750)
+	if err != nil {
+		r.t.Fatalf("Failed to create coverage directory %s: %v", r.coverageDir, err)
+	}
+	r.t.Logf("Created coverage directory: %s", r.coverageDir)
 }
