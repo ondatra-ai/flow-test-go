@@ -46,21 +46,21 @@ func NewFlowTest(t *testing.T) *FlowTestBuilder {
 	}
 }
 
-// WithFlow sets the flow file to execute
+// WithFlow sets the flow file to execute.
 func (b *FlowTestBuilder) WithFlow(flowFile string) *FlowTestBuilder {
 	b.flowFile = flowFile
 
 	return b
 }
 
-// WithConfig sets the config directory for the test
+// WithConfig sets the config directory for the test.
 func (b *FlowTestBuilder) WithConfig(configDir string) *FlowTestBuilder {
 	b.configDir = configDir
 
 	return b
 }
 
-// WithTimeout sets the execution timeout
+// WithTimeout sets the execution timeout.
 func (b *FlowTestBuilder) WithTimeout(timeout time.Duration) *FlowTestBuilder {
 	b.timeout = timeout
 
@@ -70,12 +70,14 @@ func (b *FlowTestBuilder) WithTimeout(timeout time.Duration) *FlowTestBuilder {
 // WithWorkDir sets the working directory for the test
 func (b *FlowTestBuilder) WithWorkDir(workDir string) *FlowTestBuilder {
 	b.workDir = workDir
+
 	return b
 }
 
 // ExpectExitCode sets the expected exit code
 func (b *FlowTestBuilder) ExpectExitCode(code int) *FlowTestBuilder {
 	b.expectExit = &code
+
 	return b
 }
 
@@ -92,6 +94,7 @@ func (b *FlowTestBuilder) ExpectFailure() *FlowTestBuilder {
 // ExpectOutput sets the expected output substring
 func (b *FlowTestBuilder) ExpectOutput(output string) *FlowTestBuilder {
 	b.expectOut = output
+
 	return b
 }
 

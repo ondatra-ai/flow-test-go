@@ -27,6 +27,8 @@ type FlowRunner struct {
 
 // NewFlowRunner creates a new flow runner
 func NewFlowRunner(t *testing.T) *FlowRunner {
+	t.Helper()
+
 	// Find project root for binary path
 	wd, _ := os.Getwd()
 	projectRoot := wd
@@ -154,6 +156,8 @@ func (r *FlowRunner) Execute() *FlowTestResult {
 
 // EnsureBinaryExists checks if the test binary exists and builds it if needed
 func EnsureBinaryExists(t *testing.T) {
+	t.Helper()
+
 	// Find project root first
 	wd, _ := os.Getwd()
 	projectRoot := wd
