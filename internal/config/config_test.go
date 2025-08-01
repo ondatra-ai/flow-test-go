@@ -135,7 +135,7 @@ func TestManager_SaveFlow(t *testing.T) {
 	// Verify file permissions
 	info, err := os.Stat(flowPath)
 	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
 }
 
 func TestManager_LoadFlow(t *testing.T) {
@@ -320,6 +320,7 @@ func TestManager_SaveMCPServer(t *testing.T) {
 	require.NoError(t, err)
 
 	var saved types.MCPServerConfig
+
 	err = json.Unmarshal(data, &saved)
 	require.NoError(t, err)
 	assert.Equal(t, serverConfig.Name, saved.Name)
@@ -470,7 +471,7 @@ func TestManager_LoadMCPServers_CorruptedJSON(t *testing.T) {
 
 	// Create corrupted JSON file
 	corruptedFile := filepath.Join(".flows", "servers", "corrupted.json")
-	err = os.WriteFile(corruptedFile, []byte("{invalid json"), 0600)
+	err = os.WriteFile(corruptedFile, []byte("{invalid json"), 0o600)
 	require.NoError(t, err)
 
 	// Test loading with corrupted file

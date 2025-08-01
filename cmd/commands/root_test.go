@@ -37,7 +37,9 @@ func TestExecute_Help(t *testing.T) {
 		state := commands.NewGlobalState()
 		// Simulate help command
 		os.Args = []string{"flow-test-go", "--help"}
+
 		commands.Execute(state)
+
 		return
 	}
 
@@ -46,6 +48,7 @@ func TestExecute_Help(t *testing.T) {
 	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
 
 	var stdout, stderr bytes.Buffer
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
@@ -69,7 +72,9 @@ func TestExecute_InvalidCommand(t *testing.T) {
 		state := commands.NewGlobalState()
 		// Simulate invalid command
 		os.Args = []string{"flow-test-go", "invalid-command"}
+
 		commands.Execute(state)
+
 		return
 	}
 
@@ -78,6 +83,7 @@ func TestExecute_InvalidCommand(t *testing.T) {
 	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
 
 	var stdout, stderr bytes.Buffer
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
@@ -97,7 +103,9 @@ func TestExecute_Version(t *testing.T) {
 	if os.Getenv("BE_SUBPROCESS") == "1" {
 		state := commands.NewGlobalState()
 		os.Args = []string{"flow-test-go", "--version"}
+
 		commands.Execute(state)
+
 		return
 	}
 
@@ -105,6 +113,7 @@ func TestExecute_Version(t *testing.T) {
 	cmd.Env = append(os.Environ(), "BE_SUBPROCESS=1")
 
 	var stdout, stderr bytes.Buffer
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 

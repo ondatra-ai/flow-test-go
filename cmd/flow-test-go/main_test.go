@@ -12,6 +12,7 @@ func TestMain_Help(t *testing.T) {
 	// Test main function by running it as a subprocess
 	if os.Getenv("BE_SUBPROCESS") == "1" {
 		main()
+
 		return
 	}
 
@@ -35,6 +36,7 @@ func TestMain_Version(t *testing.T) {
 	// Test version flag
 	if os.Getenv("BE_SUBPROCESS") == "1" {
 		main()
+
 		return
 	}
 
@@ -56,6 +58,7 @@ func TestMain_InvalidCommand(t *testing.T) {
 	// Test invalid command handling
 	if os.Getenv("BE_SUBPROCESS") == "1" {
 		main()
+
 		return
 	}
 
