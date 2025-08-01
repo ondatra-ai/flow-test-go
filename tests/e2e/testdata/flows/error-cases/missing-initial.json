@@ -1,0 +1,12 @@
+{
+  "id": "missing-initial",
+  "name": "Missing Initial Step Test",
+  "description": "Flow without initialStep field - should fail validation",
+  "steps": {
+    "step1": {
+      "type": "prompt",
+      "prompt": "This flow has no initialStep defined",
+      "nextStep": null
+    }
+  }
+}

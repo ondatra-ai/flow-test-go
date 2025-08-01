@@ -1,0 +1,13 @@
+{
+  "id": "single-step",
+  "name": "Single Step Test",
+  "description": "Minimal flow with one step for testing basic execution",
+  "initialStep": "only-step",
+  "steps": {
+    "only-step": {
+      "type": "prompt",
+      "prompt": "This is a test prompt",
+      "nextStep": null
+    }
+  }
+}

@@ -9,6 +9,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
+        exclude: 'tests/e2e/testdata/flows/error-cases/invalid-json\.json'
       - id: check-added-large-files
         args: ['--maxkb=1000']
       - id: check-case-conflict
@@ -46,7 +47,7 @@ repos:
 
       - id: go-test
         name: go test
-        entry: go test -v -race ./...
+        entry: bash -c 'go test -v -race $(go list ./... | grep -v "/tests/e2e")'
         language: system
         types: [go]
         pass_filenames: false

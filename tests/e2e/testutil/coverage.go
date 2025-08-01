@@ -1,0 +1,345 @@
+package testutil
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+// CoverageCollector manages coverage data collection and aggregation
+type CoverageCollector struct {
+	baseDir      string
+	manifestPath string
+	manifest     *CoverageManifest
+}
+
+// CoverageManifest tracks all test coverage data
+type CoverageManifest struct {
+	Version   string              `json:"version"`
+	Timestamp string              `json:"timestamp"`
+	Tests     []CoverageTestEntry `json:"tests"`
+	Summary   CoverageSummary     `json:"summary"`
+}
+
+// CoverageTestEntry represents a single test's coverage data
+type CoverageTestEntry struct {
+	Package  string `json:"package"`
+	Test     string `json:"test"`
+	CoverDir string `json:"coverDir"`
+	Duration string `json:"duration"`
+	Status   string `json:"status"`
+}
+
+// CoverageSummary provides overall coverage statistics
+type CoverageSummary struct {
+	TotalTests int    `json:"totalTests"`
+	Passed     int    `json:"passed"`
+	Failed     int    `json:"failed"`
+	Coverage   string `json:"coverage"`
+}
+
+// NewCoverageCollector creates a new coverage collector
+func NewCoverageCollector() *CoverageCollector {
+	baseDir := filepath.Join("coverage", "e2e")
+	manifestPath := filepath.Join(baseDir, "manifest.json")
+
+	return &CoverageCollector{
+		baseDir:      baseDir,
+		manifestPath: manifestPath,
+		manifest: &CoverageManifest{
+			Version:   "1.0",
+			Timestamp: time.Now().Format(time.RFC3339),
+			Tests:     make([]CoverageTestEntry, 0),
+			Summary: CoverageSummary{
+				TotalTests: 0,
+				Passed:     0,
+				Failed:     0,
+				Coverage:   "0.0%",
+			},
+		},
+	}
+}
+
+// LoadExistingManifest loads an existing coverage manifest if it exists
+func (c *CoverageCollector) LoadExistingManifest() error {
+	if _, err := os.Stat(c.manifestPath); os.IsNotExist(err) {
+		return nil // No existing manifest, start fresh
+	}
+
+	data, err := os.ReadFile(c.manifestPath)
+	if err != nil {
+		return fmt.Errorf("failed to read manifest: %w", err)
+	}
+
+	err = json.Unmarshal(data, c.manifest)
+	if err != nil {
+		return fmt.Errorf("failed to parse manifest: %w", err)
+	}
+
+	return nil
+}
+
+// AddTestResult adds a test result to the coverage manifest
+func (c *CoverageCollector) AddTestResult(packageName, testName, coverDir string, duration time.Duration, passed bool) {
+	status := "passed"
+	if !passed {
+		status = "failed"
+	}
+
+	entry := CoverageTestEntry{
+		Package:  packageName,
+		Test:     testName,
+		CoverDir: coverDir,
+		Duration: duration.String(),
+		Status:   status,
+	}
+
+	c.manifest.Tests = append(c.manifest.Tests, entry)
+	c.updateSummary()
+}
+
+// updateSummary recalculates the coverage summary
+func (c *CoverageCollector) updateSummary() {
+	c.manifest.Summary.TotalTests = len(c.manifest.Tests)
+	c.manifest.Summary.Passed = 0
+	c.manifest.Summary.Failed = 0
+
+	for _, test := range c.manifest.Tests {
+		if test.Status == "passed" {
+			c.manifest.Summary.Passed++
+		} else {
+			c.manifest.Summary.Failed++
+		}
+	}
+
+	// Update timestamp
+	c.manifest.Timestamp = time.Now().Format(time.RFC3339)
+}
+
+// SaveManifest saves the coverage manifest to disk
+func (c *CoverageCollector) SaveManifest() error {
+	// Ensure directory exists
+	err := os.MkdirAll(filepath.Dir(c.manifestPath), 0o755)
+	if err != nil {
+		return fmt.Errorf("failed to create manifest directory: %w", err)
+	}
+
+	// Marshal to JSON
+	data, err := json.MarshalIndent(c.manifest, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal manifest: %w", err)
+	}
+
+	// Write to file
+	err = os.WriteFile(c.manifestPath, data, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to write manifest: %w", err)
+	}
+
+	return nil
+}
+
+// AggregateCoverage merges all coverage data and generates reports
+func (c *CoverageCollector) AggregateCoverage() error {
+	// Create merged coverage directory
+	mergedDir := filepath.Join("coverage", "e2e-merged")
+	err := os.MkdirAll(mergedDir, 0o755)
+	if err != nil {
+		return fmt.Errorf("failed to create merged directory: %w", err)
+	}
+
+	// Find all coverage directories
+	coverDirs := make([]string, 0)
+	err = filepath.Walk(c.baseDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Look for coverage data directories (contain covcounters files)
+		if info.IsDir() && path != c.baseDir && path != mergedDir {
+			// Check if this directory contains coverage files
+			entries, err := os.ReadDir(path)
+			if err == nil {
+				for _, entry := range entries {
+					if !entry.IsDir() && (filepath.Ext(entry.Name()) == "" ||
+						contains(entry.Name(), "covcounters") ||
+						contains(entry.Name(), "covmeta")) {
+						coverDirs = append(coverDirs, path)
+						break
+					}
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to find coverage directories: %w", err)
+	}
+
+	if len(coverDirs) == 0 {
+		return fmt.Errorf("no coverage data found")
+	}
+
+	// Merge coverage data
+	return c.mergeCoverageData(coverDirs, mergedDir)
+}
+
+// mergeCoverageData merges coverage data from multiple directories
+func (c *CoverageCollector) mergeCoverageData(sourceDirs []string, mergedDir string) error {
+	// Build merge command
+	args := []string{"tool", "covdata", "merge"}
+
+	// Add input directories
+	for i, dir := range sourceDirs {
+		if i == 0 {
+			args = append(args, "-i="+dir)
+		} else {
+			args = append(args, ","+dir)
+		}
+	}
+
+	// Add output directory
+	args = append(args, "-o="+mergedDir)
+
+	// Execute merge command
+	cmd := exec.Command("go", args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to merge coverage data: %w\nOutput: %s", err, output)
+	}
+
+	// Convert to text format
+	return c.generateReports(mergedDir)
+}
+
+// generateReports creates text and HTML coverage reports
+func (c *CoverageCollector) generateReports(mergedDir string) error {
+	coverageOut := filepath.Join("coverage", "e2e.out")
+	coverageHTML := filepath.Join("coverage", "e2e.html")
+	coverageSummary := filepath.Join("coverage", "e2e-summary.txt")
+
+	// Convert to text format
+	cmd := exec.Command("go", "tool", "covdata", "textfmt",
+		"-i="+mergedDir, "-o="+coverageOut)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to convert coverage to text format: %w\nOutput: %s", err, output)
+	}
+
+	// Generate HTML report
+	cmd = exec.Command("go", "tool", "cover",
+		"-html="+coverageOut, "-o="+coverageHTML)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to generate HTML report: %w\nOutput: %s", err, output)
+	}
+
+	// Generate summary report
+	cmd = exec.Command("go", "tool", "cover", "-func="+coverageOut)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to generate summary report: %w\nOutput: %s", err, output)
+	}
+
+	// Save summary to file
+	err = os.WriteFile(coverageSummary, output, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to write summary file: %w", err)
+	}
+
+	// Extract total coverage percentage and update manifest
+	coverage := c.extractCoveragePercentage(string(output))
+	c.manifest.Summary.Coverage = coverage
+
+	return nil
+}
+
+// extractCoveragePercentage extracts the total coverage percentage from go tool cover output
+func (c *CoverageCollector) extractCoveragePercentage(output string) string {
+	lines := splitLines(output)
+	for _, line := range lines {
+		if contains(line, "total:") {
+			// Extract percentage (should be at the end of the line)
+			fields := splitFields(line)
+			if len(fields) > 0 {
+				lastField := fields[len(fields)-1]
+				if contains(lastField, "%") {
+					return lastField
+				}
+			}
+		}
+	}
+	return "0.0%"
+}
+
+// Helper functions for string processing
+func splitLines(s string) []string {
+	if s == "" {
+		return nil
+	}
+
+	lines := make([]string, 0)
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\n' {
+			if i > start {
+				lines = append(lines, s[start:i])
+			}
+			start = i + 1
+		}
+	}
+	if start < len(s) {
+		lines = append(lines, s[start:])
+	}
+	return lines
+}
+
+func splitFields(s string) []string {
+	if s == "" {
+		return nil
+	}
+
+	fields := make([]string, 0)
+	start := 0
+	inField := false
+
+	for i := 0; i < len(s); i++ {
+		if s[i] == ' ' || s[i] == '\t' {
+			if inField {
+				fields = append(fields, s[start:i])
+				inField = false
+			}
+		} else {
+			if !inField {
+				start = i
+				inField = true
+			}
+		}
+	}
+
+	if inField {
+		fields = append(fields, s[start:])
+	}
+
+	return fields
+}
+
+// RecordTestExecution is a helper function for tests to record their execution
+func RecordTestExecution(t *testing.T, packageName string, coverDir string, duration time.Duration, passed bool) {
+	collector := NewCoverageCollector()
+	err := collector.LoadExistingManifest()
+	if err != nil {
+		t.Logf("Warning: Could not load existing manifest: %v", err)
+	}
+
+	collector.AddTestResult(packageName, t.Name(), coverDir, duration, passed)
+
+	err = collector.SaveManifest()
+	if err != nil {
+		t.Logf("Warning: Could not save coverage manifest: %v", err)
+	}
+}

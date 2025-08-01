@@ -1,0 +1,23 @@
+{
+  "id": "multi-step",
+  "name": "Multi Step Test",
+  "description": "Flow with sequential steps for testing step navigation",
+  "initialStep": "step1",
+  "steps": {
+    "step1": {
+      "type": "prompt",
+      "prompt": "First step in the sequence",
+      "nextStep": "step2"
+    },
+    "step2": {
+      "type": "prompt",
+      "prompt": "Second step in the sequence",
+      "nextStep": "step3"
+    },
+    "step3": {
+      "type": "prompt",
+      "prompt": "Final step in the sequence",
+      "nextStep": null
+    }
+  }
+}
