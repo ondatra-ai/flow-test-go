@@ -3,7 +3,6 @@ package commands_test
 import (
 	"bytes"
 	"context"
-	"errors"
 	"os"
 	"os/exec"
 	"strings"
@@ -57,13 +56,8 @@ func TestExecute_Help(t *testing.T) {
 
 	err := cmd.Run()
 
-	// Help command should exit with code 0
-	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		assert.Equal(t, 0, exitError.ExitCode())
-	} else {
-		require.NoError(t, err)
-	}
+	// Help command should exit cleanly (code 0)
+	require.NoError(t, err, "Help command should not error")
 
 	// Should contain help text
 	output := stdout.String() + stderr.String()
@@ -93,14 +87,12 @@ func TestExecute_InvalidCommand(t *testing.T) {
 
 	err := cmd.Run()
 
-	// Invalid command should exit with non-zero code
+	// Invalid command MUST exit with non-zero code
+	require.Error(t, err, "Invalid command should always fail")
+
 	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		assert.NotEqual(t, 0, exitError.ExitCode())
-	} else {
-		// If no error, check that stderr contains error message
-		assert.Contains(t, stderr.String(), "Error")
-	}
+	require.ErrorAs(t, err, &exitError, "Should be an exit error")
+	assert.NotEqual(t, 0, exitError.ExitCode(), "Invalid command should exit with non-zero code")
 }
 
 func TestExecute_Version(t *testing.T) {
@@ -124,13 +116,8 @@ func TestExecute_Version(t *testing.T) {
 
 	err := cmd.Run()
 
-	// Version command should exit with code 0
-	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		assert.Equal(t, 0, exitError.ExitCode())
-	} else {
-		require.NoError(t, err)
-	}
+	// Version command should exit cleanly (code 0)
+	require.NoError(t, err, "Version command should not error")
 
 	// Should contain version
 	output := stdout.String() + stderr.String()
