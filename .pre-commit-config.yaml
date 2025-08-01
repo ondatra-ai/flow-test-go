@@ -19,7 +19,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: golangci-lint
-        args: ['--fix']
+        args: ['run']
 
   - repo: local
     hooks:
