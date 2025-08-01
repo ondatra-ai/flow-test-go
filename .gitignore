@@ -24,6 +24,8 @@ dist/
 # Coverage files
 coverage.out
 coverage.html
+coverage/
+tests/e2e/coverage/
 
 # IDE files
 .vscode/
@@ -46,5 +48,5 @@ Thumbs.db
 *.temp
 
 # Log files
-*.log 
+*.log
 tmp
