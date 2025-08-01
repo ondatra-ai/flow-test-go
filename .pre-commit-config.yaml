@@ -21,6 +21,10 @@ repos:
     hooks:
       - id: golangci-lint
         args: ['run']
+  - repo: https://github.com/mpalmer/action-validator
+    rev: v0.7.1
+    hooks:
+    - id: action-validator
 
   - repo: local
     hooks:

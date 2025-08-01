@@ -67,7 +67,6 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
-    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -121,7 +120,6 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
-    timeout-minutes: 10
     permissions:
       contents: read
       security-events: write
@@ -136,12 +134,12 @@ jobs:
           cache: true
 
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@v2.21.4
+        uses: securego/gosec@v2.22.7
         with:
           args: '-exclude=G304 ./...'
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.32.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -150,6 +148,5 @@ jobs:
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
