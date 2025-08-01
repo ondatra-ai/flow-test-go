@@ -68,20 +68,22 @@ Type: Intermediate Feature
     - Dependencies: None
 
 ## Functional Changes (E2E Test Cases)
-- **Test Case 1: Basic Command Execution**
-  - Test that application starts and shows help
-  - Test version command output
-  - Verify exit codes
-- **Test Case 2: Flow Execution Tests**
-  - Test flow list command
-  - Test flow execution with valid config
-  - Test error handling with invalid config
-- **Test Case 3: MCP Server Integration**
-  - Test MCP server configuration loading
-  - Test server communication
-  - Test error scenarios
-
-## Design Decisions
+- **Test Case 1: Basic Flow Execution**
+  - Execute simple linear flow (hello-world.json)
+  - Verify flow completes successfully
+  - Check output matches expected results
+- **Test Case 2: Conditional Flow Testing**
+  - Test flows with conditional branching
+  - Verify correct path selection based on conditions
+  - Test nested conditions and complex logic
+- **Test Case 4: Error Scenarios**
+  - Test invalid flow files (malformed JSON, missing fields)
+  - Test flows with circular references
+  - Test timeout handling and interruption
+- **Test Case 5: Advanced Flow Features**
+  - Test flows with loops and complex navigation
+  - Test complex flow navigation patterns
+  - Test performance with large flows
 - Architecture:
   - [x] Use subprocess testing pattern with os/exec
   - [x] Create test helper package for common operations
@@ -115,18 +117,18 @@ Type: Intermediate Feature
 
 ### Phase 2: Core E2E Tests
 1. [ ] Remove placeholder_test.go
-2. [ ] Create command_test.go for basic CLI tests
-   - [ ] Test help command
-   - [ ] Test version command
-   - [ ] Test invalid commands
-3. [ ] Create flow_test.go for flow operations
-   - [ ] Test flow list
-   - [ ] Test flow execution
-   - [ ] Test error scenarios
-4. [ ] Create mcp_test.go for MCP integration
-   - [ ] Test server configuration
-   - [ ] Test server lifecycle
-   - [ ] Test communication errors
+2. [ ] Create test flow files in testdata/flows/
+   - [ ] Basic linear flow (hello-world.json)
+   - [ ] Multi-step flow with sequential execution
+   - [ ] Conditional flow with branching
+   - [ ] Error case flows (invalid syntax, missing fields)
+3. [ ] Create flow_execution_test.go
+   - [ ] Test basic flow execution
+   - [ ] Test conditional branching
+   - [ ] Test error handling
+4. [ ] Create flow_validation_test.go
+   - [ ] Test flow schema validation
+   - [ ] Test invalid flow handling
 
 ### Phase 3: Coverage Integration
 1. [ ] Implement coverage collection in each test
@@ -175,9 +177,9 @@ Type: Intermediate Feature
   - **Mitigation**: Use go tool covdata for merging
 
 ## Creative Phases Required
-- [ ] Test Framework Architecture Design
-- [ ] Coverage Collection Strategy Design
-- [ ] CI/CD Integration Architecture
+- [x] Test Framework Architecture Design
+- [x] Coverage Collection Strategy Design
+- [x] CI/CD Integration Architecture
 
 ## Branch
 - Name: task-20250109-e2e-subprocess-tests
@@ -186,7 +188,7 @@ Type: Intermediate Feature
 ## Status
 - [x] Initialization complete
 - [x] Planning complete
-- [ ] Creative phase complete
+- [x] Creative phase complete
 - [x] Technology validation complete
 - [ ] Implementation complete
 - [ ] Testing complete
