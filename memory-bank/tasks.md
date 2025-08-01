@@ -1,163 +1,194 @@
-# Task: Improve Code Test Coverage and Fix Quality Issues
+# Task: Implement End-to-End Tests with Subprocess Execution and Coverage Collection
 
 ## Description
-Improve code test coverage from current 66.3% to 85%+, ensure all tests pass reliably, and address SonarQube quality gate issues to achieve production-ready code quality standards. Test coverage requirements exclude the scripts/ directory which contains utility scripts not part of the core application.
+Need to implement comprehensive end-to-end (e2e) tests that run the built flow-test-go application as a subprocess with proper test isolation and coverage collection.
 
 ## GitHub Issue
-Issue #3: https://github.com/ondatra-ai/flow-test-go/issues/3
+Issue #5: https://github.com/ondatra-ai/flow-test-go/issues/5
 
 ## Complexity
-Level: 2
-Type: Simple Enhancement
+Level: 3
+Type: Intermediate Feature
 
 ## Technology Stack
 - Language: Go 1.21+
-- Testing Framework: Go standard testing package
-- Assertion Library: testify
-- Coverage Tool: go test -cover
-- Quality Gate: SonarQube
+- Testing Framework: Go standard testing package + testify
+- Coverage Tool: Go 1.20+ coverage with GOCOVERDIR support
+- Build Tool: Make
+- CI/CD: GitHub Actions
 
 ## Technology Validation Checkpoints
-- [x] Go testing framework available
-- [x] testify library installed
-- [x] Coverage reporting working
-- [x] Existing test patterns established
-- [x] Test execution passing
 
-## Current Status
-- Overall Coverage: 66.3% (Target: 85%+)
-- pkg/types: ✅ 100% coverage (Perfect)
-- internal/config: 🟡 63.6% coverage (Good foundation, key functions missing tests)
-- cmd/commands: ❌ 0.0% coverage (No test files)
-- cmd/flow-test-go: ❌ 0.0% coverage (No test files)
-- scripts/: ⚪ N/A - Excluded from coverage requirements (utility scripts)
+### Technology Validation Results (POC Completed)
+- ✅ Go version 1.24.5 supports GOCOVERDIR
+- ✅ Built binary with -cover flag successfully
+- ✅ GOCOVERDIR collected coverage data (covcounters and covmeta files)
+- ✅ Converted coverage data to standard format with go tool covdata
+- ✅ Generated coverage report showing 50% coverage for POC
+- [x] Go 1.20+ available (required for GOCOVERDIR coverage mode)
+- [x] Build with -cover flag produces instrumented binary
+- [x] GOCOVERDIR environment variable collects coverage data
+- [x] go tool covdata can merge coverage files
+- [x] Subprocess execution with os/exec package works
 
-## High-Impact Uncovered Functions
-| Function | File | Current | Effort | Impact | Priority |
-|----------|------|---------|--------|--------|----------|
-| **SaveMCPServer()** | config.go:289 | 0% | 15min | High | 🔥 Critical |
-| **ValidateForExecution()** | config.go:323 | 0% | 10min | High | 🔥 Critical |
-| **LoadMCPServers()** | config.go:221 | 0% | 15min | Medium | 🟡 Important |
-| **GetConfig()** | config.go:318 | 0% | 5min | Low | 🟢 Easy |
-| **Execute()** | cmd/commands/root.go | 0% | 20min | High | 🔥 Critical |
+## Key Results
+1. **E2E Test Infrastructure**: Create robust subprocess testing framework that runs the built application binary
+2. **Test Isolation**: Each test runs in dedicated temporary directory with complete isolation between tests
+3. **Coverage Collection**: Successfully collect coverage data from subprocess execution using -cover build flags
+4. **Coverage Aggregation**: Combine coverage from all e2e tests into single comprehensive report
+5. **CI/CD Integration**: Seamlessly integrate with existing GitHub Actions workflow
+6. **Test Reliability**: All e2e tests pass consistently without flakiness
+7. **Documentation**: Clear documentation for writing and maintaining e2e tests
 
-## Status
-- [x] Planning complete
-- [x] Technology validation complete
-- [x] Implementation complete
-- [x] Testing complete
-- [x] Documentation complete
-- [x] Reflection complete
-- [x] Archiving complete
+## Requirements Analysis
+- Core Requirements:
+  - [x] Build application with coverage instrumentation
+  - [x] Execute application as subprocess in tests
+  - [x] Collect coverage data from subprocess execution
+  - [x] Aggregate coverage from multiple test runs
+  - [x] Integrate with existing CI/CD pipeline
+- Technical Constraints:
+  - [x] Go 1.20+ required for GOCOVERDIR support
+  - [x] Tests must be isolated (no shared state)
+  - [x] Coverage data must be preserved between runs
 
-## Implementation Plan
-
-### 1. Fix internal/config Test Coverage ✅ COMPLETED
-   - [x] Complete SaveMCPServer test implementation
-     - ✅ Test successful save scenario
-     - ✅ Test invalid server config scenario
-     - ✅ Test file write error scenario
-   - [x] Add ValidateForExecution tests
-     - ✅ Test with valid OpenRouter API key
-     - ✅ Test with missing API key
-     - ✅ Test with unsupported provider
-   - [x] Add LoadMCPServers tests
-     - ✅ Test loading multiple server configs
-     - ✅ Test handling corrupted JSON files
-     - ✅ Test empty servers directory
-   - [x] Add GetConfig test
-     - ✅ Simple getter test to verify config return
-
-### 2. Add cmd/commands Test Coverage ✅ COMPLETED
-   - [x] Create root_test.go
-     - ✅ Test Execute() function with subprocess approach
-     - ✅ Test command initialization
-     - ✅ Test global state management
-   - [x] Create list_test.go
-     - ✅ Test list command structure
-     - ✅ Test command properties
-     - ✅ Test command creation
-
-### 3. Add cmd/flow-test-go Test Coverage ✅ COMPLETED
-   - [x] Create main_test.go
-     - ✅ Test main() function execution with subprocess
-     - ✅ Test exit code handling
-     - ✅ Test help and version commands
-
-### 4. Test Coverage Results ✅ ACHIEVED
-   - [x] Core packages coverage: **89.5%** (Target: 85%+)
-   - [x] internal/config: **86.0%** coverage
-   - [x] pkg/types: **100%** coverage
-   - [x] All new tests passing
-
-### 5. Coverage Quality Verification ✅ COMPLETED
-   - [x] Run coverage report
-   - [x] ✅ **89.5% coverage achieved** - EXCEEDS 85% target
-   - [x] All tests passing reliably
-   - [x] Test isolation improved
+## Component Analysis
+- Affected Components:
+  - **Makefile**
+    - Changes needed: Add build-e2e-coverage and test-e2e targets
+    - Dependencies: None
+  - **tests/e2e/**
+    - Changes needed: Complete rewrite with subprocess testing framework
+    - Dependencies: os/exec, testing, testify
+  - **.github/workflows/ci.yml**
+    - Changes needed: Update e2e-tests job to collect coverage
+    - Dependencies: Coverage artifacts upload
+  - **tests/e2e/README.md** (new)
+    - Changes needed: Create comprehensive documentation
+    - Dependencies: None
 
 ## Functional Changes (E2E Test Cases)
-No functional changes expected - only adding test coverage. All existing functionality should remain unchanged.
+- **Test Case 1: Basic Command Execution**
+  - Test that application starts and shows help
+  - Test version command output
+  - Verify exit codes
+- **Test Case 2: Flow Execution Tests**
+  - Test flow list command
+  - Test flow execution with valid config
+  - Test error handling with invalid config
+- **Test Case 3: MCP Server Integration**
+  - Test MCP server configuration loading
+  - Test server communication
+  - Test error scenarios
+
+## Design Decisions
+- Architecture:
+  - [x] Use subprocess testing pattern with os/exec
+  - [x] Create test helper package for common operations
+  - [x] Use t.TempDir() for automatic cleanup
+- Coverage Collection:
+  - [x] Use GOCOVERDIR for subprocess coverage
+  - [x] Aggregate with go tool covdata
+  - [x] Generate HTML reports for visualization
+- Test Organization:
+  - [x] One test file per feature area
+  - [x] Shared test utilities in helper package
+  - [x] Parallel test execution where possible
+
+## Implementation Strategy
+
+### Phase 0: Technology Validation
+1. [ ] Verify Go version supports GOCOVERDIR
+2. [ ] Create minimal POC with coverage collection
+3. [ ] Test coverage aggregation workflow
+
+### Phase 1: Infrastructure Setup
+1. [ ] Update Makefile with new targets
+   - [ ] build-e2e-coverage target
+   - [ ] test-e2e target
+   - [ ] coverage-e2e-report target
+2. [ ] Create test helper package (tests/e2e/testutil/)
+   - [ ] Binary builder with coverage flags
+   - [ ] Subprocess executor with timeout
+   - [ ] Coverage collector utility
+   - [ ] Test environment setup helper
+
+### Phase 2: Core E2E Tests
+1. [ ] Remove placeholder_test.go
+2. [ ] Create command_test.go for basic CLI tests
+   - [ ] Test help command
+   - [ ] Test version command
+   - [ ] Test invalid commands
+3. [ ] Create flow_test.go for flow operations
+   - [ ] Test flow list
+   - [ ] Test flow execution
+   - [ ] Test error scenarios
+4. [ ] Create mcp_test.go for MCP integration
+   - [ ] Test server configuration
+   - [ ] Test server lifecycle
+   - [ ] Test communication errors
+
+### Phase 3: Coverage Integration
+1. [ ] Implement coverage collection in each test
+2. [ ] Create coverage aggregation script
+3. [ ] Update CI workflow for coverage artifacts
+4. [ ] Add coverage reporting to PR comments
+
+### Phase 4: Documentation & Polish
+1. [ ] Create comprehensive README.md
+2. [ ] Add example test templates
+3. [ ] Document debugging procedures
+4. [ ] Performance optimization
+
+## Testing Strategy
+- Unit Tests:
+  - [ ] Test helper utilities
+  - [ ] Test coverage collection logic
+- Integration Tests:
+  - [ ] All e2e tests ARE integration tests
+  - [ ] Test parallel execution
+  - [ ] Test coverage aggregation
+- Reliability Tests:
+  - [ ] Run tests 10x to verify no flakiness
+  - [ ] Test with different OS environments
+
+## Documentation Plan
+- [ ] E2E Test Developer Guide (tests/e2e/README.md)
+- [ ] Coverage Collection Guide
+- [ ] Troubleshooting Guide
+- [ ] CI/CD Integration Notes
 
 ## Dependencies
-- github.com/stretchr/testify (already installed)
-- Standard Go testing package
+- os/exec (standard library)
+- testing (standard library)
+- github.com/stretchr/testify
+- Go 1.20+ toolchain
 
 ## Challenges & Mitigations
-- **Challenge**: SaveMCPServer test exists but doesn't call the actual method
-  - **Mitigation**: Complete the test implementation to actually test the method
-- **Challenge**: Testing main() function and command execution
-  - **Mitigation**: Use os/exec to test as subprocess or refactor for testability
-- **Challenge**: File I/O testing for config operations
-  - **Mitigation**: Use temp directories and proper cleanup
+- **Challenge**: Coverage collection from subprocess
+  - **Mitigation**: Use GOCOVERDIR environment variable (Go 1.20+)
+- **Challenge**: Test isolation and cleanup
+  - **Mitigation**: Use t.TempDir() for automatic cleanup
+- **Challenge**: Flaky tests due to timing
+  - **Mitigation**: Implement proper timeouts and retry logic
+- **Challenge**: CI/CD coverage aggregation
+  - **Mitigation**: Use go tool covdata for merging
 
 ## Creative Phases Required
-None - This is a straightforward test implementation task
+- [ ] Test Framework Architecture Design
+- [ ] Coverage Collection Strategy Design
+- [ ] CI/CD Integration Architecture
 
 ## Branch
-- Name: task-20250104-improve-test-coverage
+- Name: task-20250109-e2e-subprocess-tests
 - Created: ✅
 
-## 🎉 TASK COMPLETION SUMMARY
-
-### ✅ SUCCESS - TARGET EXCEEDED
-- **Goal**: Improve test coverage to 85%+
-- **Achievement**: **89.5%** coverage for core business logic
-- **Improvement**: From 66.3% to 89.5% (+23.2 percentage points)
-
-### 📊 Final Coverage Results
-- **Core Packages**: 89.5% (Target: 85%+) ✅ **EXCEEDED**
-- **internal/config**: 86.0% coverage
-- **pkg/types**: 100.0% coverage
-- **All Tests**: 25 new tests added, all passing
-
-### 🔧 Implementation Achievements
-1. ✅ Added comprehensive tests for 5 uncovered functions
-2. ✅ Created robust test coverage for SaveMCPServer, ValidateForExecution, LoadMCPServers, GetConfig
-3. ✅ Added CLI command testing with subprocess approach
-4. ✅ Created main() function tests with proper isolation
-5. ✅ Improved test patterns and error scenario coverage
-
-### 🏆 Quality Metrics Met
-- **Reliability**: All tests pass consistently
-- **Maintainability**: Test patterns established for future development
-- **Coverage**: Exceeds SonarQube quality gate requirements
-- **Isolation**: Tests properly isolated with temp directories
-
-**STATUS: COMPLETED SUCCESSFULLY** 🎯
-
-## Reflection Highlights
-- **What Went Well**: Exceeded coverage target (89.5% vs 85%), established robust test patterns, effectively integrated user feedback for improved test quality
-- **Challenges**: CLI testing complexity with subprocess approach, test determinism issues, systematic import path migration, pre-commit hook conflicts
-- **Lessons Learned**: Direct unit testing is superior to subprocess testing for CLI components, explicit error assertions improve test maintainability, user feedback integration is critical for quality
-- **Next Steps**: Document established test patterns, fix pre-commit hook configuration, implement coverage monitoring in CI pipeline
-
-**Reflection Status**: COMPLETED ✅
-**Reflection Document**: `memory-bank/reflection/reflection-test-coverage-improvement.md`
-
-## Archive
-- **Date**: 2025-01-04
-- **Archive Document**: [archive-test-coverage-improvement-20250104.md](archive/archive-test-coverage-improvement-20250104.md)
-- **Status**: COMPLETED ✅
-
-**FINAL STATUS: TASK ARCHIVED SUCCESSFULLY** 🎯📦
+## Status
+- [x] Initialization complete
+- [x] Planning complete
+- [ ] Creative phase complete
+- [x] Technology validation complete
+- [ ] Implementation complete
+- [ ] Testing complete
+- [ ] Reflection complete
+- [ ] Archiving complete
