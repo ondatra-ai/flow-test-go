@@ -73,3 +73,17 @@
 - File not found scenarios
 
 **STATUS: Ready for testing and integration** ✅
+
+## 2025-01-11: GitHub Actions Comment Monitoring Workflow Added
+- **Issue**: #8 - Add GitHub Actions workflow for PR/Issue comment monitoring
+- **Complexity**: Level 1 (Quick Feature Addition)
+- **Files Created**:
+  - /.github/workflows/comment-monitor.yml: Verified and committed
+- **Key Implementation**:
+  - Event trigger: issue_comment with types [created]
+  - Single job with minimal ubuntu-latest setup
+  - Outputs: comment author, body, PR/Issue number, repository, timestamp
+  - Follows existing CI patterns with minimal permissions
+- **Validation**: Pre-commit hooks passed including workflow validation
+- **Status**: Complete and ready for testing with real comments
+- **Next Steps**: Create PR for review and testing
