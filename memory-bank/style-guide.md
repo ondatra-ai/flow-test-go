@@ -255,5 +255,5 @@ Consistent naming makes code predictable and easy to read.
 
 ## Linter Configuration Reference
 - **Disabled Linters**: Linters like `cyclop`, `depguard`, and `revive` are commented out in `.golangci.yml`. This indicates they may be too opinionated, require specific configuration (like dependency rules for `depguard`), or are not currently a priority. They can be enabled later if needed.
-- **Test Exclusions**: Rules for `gocyclo`, `errcheck`, and `funlen` are relaxed for `_test.go` files. This is a practical choice, as test files can sometimes require longer setup functions and repeated error checks that don't need to be propagated.
+- **Test Exclusions**: Rules for `gocyclo`, `errcheck`, and `funlen` are relaxed for `_test.go` files. This is a practical choice, as test files can sometimes require longer setup functions and repeated error checks that don't need to be handled.
 - **WSL (Whitespace Linter)**: The `wsl` configuration is customized to allow newlines at the start of a block but enforces them around multi-line branch statements, promoting a clean visual separation of logic blocks.
