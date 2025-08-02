@@ -17,7 +17,7 @@
 **Scenario 1.1.2: Flow with conditions**
 - **Given** I have a flow with conditional branching
 - **When** the flow reaches a condition step
-- **Then** the system should evaluate the JavaScript expression
+- **Then** the system should evaluate the expression using a Go expression evaluator
 - **And** follow the "yes" or "no" path based on the result
 
 ### User Story 1.2: Step Type Support
@@ -42,8 +42,10 @@
 **Scenario 1.2.3: Condition step evaluation**
 - **Given** I have a step with type "condition"
 - **When** the flow executes this step
-- **Then** the system should evaluate the JavaScript expression against context
+- **Then** the system should evaluate the expression against context using a Go expression evaluator
 - **And** proceed to the appropriate next step
+
+**Technical Note**: The condition expressions like `"context.issue_number > 0"` or `"result.success === true"` would be evaluated by a Go-based expression library (such as `govaluate` or similar) rather than a JavaScript engine, which aligns with the Go technology stack.
 
 ## Feature 2: Embedded Tool System
 
